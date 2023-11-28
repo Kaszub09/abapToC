@@ -1,4 +1,4 @@
-![obraz](https://github.com/Kaszub09/abapToC/assets/34368953/c59ddf87-4982-497f-82e3-45a2cd03618b)# abapToC
+# abapToC
 ABAP Transport of Copies
 
 ## Features
