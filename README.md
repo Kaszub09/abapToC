@@ -14,7 +14,7 @@ ABAP Transport of Copies
 
 ## Installation
 
-1. Use [abapGit](ttps://github.com/abapGit/abapGit)
+1. Use abapGit https://github.com/abapGit/abapGit 
 2. In order for import to work, you must:
    1. Import/Transport project to target system
    2. Create connection for target system in SM59 - for each possible target in transport (e.g. 'SYSTEM', 'SYSTEM.MANDANT' ) create connection with exact same name - will be used to call RFC which unpacks transport. So ZZZ.999 for system ZZZ and mandant 999, or just ZZZ if you don't specify mandant in transports.
