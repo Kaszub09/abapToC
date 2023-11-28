@@ -81,16 +81,18 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
 
   METHOD gather_transports.
     SELECT FROM e070
-                LEFT JOIN e07t ON e07t~trkorr = e070~trkorr AND e07t~langu = @sy-langu
+                LEFT JOIN e07t ON e07t~trkorr = e070~trkorr
       FIELDS e070~trkorr AS transport, trfunction AS type,  tarsystem AS target_system,
           as4user AS owner, as4date AS creation_date,
           e07t~as4text AS description,
           @c_icon-create AS create_toc, @c_icon-create_release AS create_release_toc, @c_icon-create_release_import AS create_release_import_toc
       WHERE e070~trkorr IN @tranports AND as4user IN @owners AND strkorr = @space
-        AND ( @include_released = @abap_true OR trstatus IN ( 'L', 'D' ) )
+        AND ( @include_released = @abap_true OR trstatus   IN ( 'L', 'D' ) )
         AND ( @include_tocs     = @abap_true OR trfunction <> 'T' )
-      ORDER BY as4date DESCENDING
+      ORDER BY e070~trkorr DESCENDING, as4date DESCENDING
       INTO CORRESPONDING FIELDS OF TABLE @report_data.
+
+      DELETE ADJACENT DUPLICATES FROM report_data comparing transport.
   ENDMETHOD.
 
   METHOD display.
@@ -105,31 +107,32 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
 
     TRY.
         CASE column.
-            "--------------------------------------------------
+          "--------------------------------------------------
           WHEN c_toc_columns-create_toc.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
             selected->toc_status = TEXT-s01.
             set_status_color( row = row color = c_status_color-green ).
 
-            "--------------------------------------------------
+          "--------------------------------------------------
           WHEN c_toc_columns-create_release_toc.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
             toc_manager->release( selected->toc_number ).
             selected->toc_status = TEXT-s02.
             set_status_color( row = row color = c_status_color-green ).
 
-            "--------------------------------------------------
+          "--------------------------------------------------
           WHEN c_toc_columns-create_release_import_toc.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
             toc_manager->release( selected->toc_number ).
-            data(rc) = toc_manager->import( toc = selected->toc_number target_system = selected->target_system ).
+            DATA(rc) = conv i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system ) ).
             selected->toc_status = TEXT-s03.
-            "set_status_timer( selected->toc_number ).
+            " set_status_timer( selected->toc_number ).
             selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
             set_status_color( row = row color = COND #( WHEN rc = 0 THEN c_status_color-green
-                                                           WHEN rc = 4 THEN c_status_color-yellow ELSE c_status_color-red ) ).
+                                                        WHEN rc = 4 THEN c_status_color-yellow
+                                                        ELSE             c_status_color-red ) ).
 
-            "--------------------------------------------------
+          "--------------------------------------------------
           WHEN OTHERS.
         ENDCASE.
 
@@ -241,11 +244,12 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
       ENDIF.
 
       TRY.
-          me->toc_manager->check_status_in_system( EXPORTING toc = toc->* system = entry->target_system IMPORTING imported = DATA(imported) rc = DATA(rc) ).
+          toc_manager->check_status_in_system( EXPORTING toc = toc->* system = entry->target_system IMPORTING imported = DATA(imported) rc = DATA(rc) ).
           IF imported = abap_true.
             entry->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
             set_entry_color( entry = entry color = COND #( WHEN rc = 0 THEN c_status_color-green
-                                                           WHEN rc = 8 THEN c_status_color-red ELSE c_status_color-yellow ) ).
+                                                           WHEN rc = 8 THEN c_status_color-red
+                                                           ELSE             c_status_color-yellow ) ).
             APPEND VALUE #( sign = 'I' option = 'EQ' low = toc->* ) TO tocs_to_remove.
           ENDIF.
 
@@ -262,5 +266,4 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     alv_table->refresh( s_stable = VALUE #( ) refresh_mode = if_salv_c_refresh=>full ).
     cl_gui_cfw=>set_new_ok_code( new_code = '&REFRESHG' ).
   ENDMETHOD.
-
 ENDCLASS.
