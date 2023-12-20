@@ -85,15 +85,16 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   METHOD gather_transports.
     SELECT FROM e070
                 LEFT JOIN e07t ON e07t~trkorr = e070~trkorr
-      FIELDS e070~trkorr AS transport, trfunction AS type,  tarsystem AS target_system,
-          as4user AS owner, as4date AS creation_date,
+                LEFT JOIN e070 AS sup ON sup~trkorr = e070~strkorr
+      FIELDS e070~trkorr AS transport, e070~trfunction AS type, e070~as4user AS owner, e070~as4date AS creation_date,
+          CASE WHEN e070~tarsystem <> @space THEN e070~tarsystem ELSE sup~tarsystem END AS target_system,
           e07t~as4text AS description,
           @c_icon-create AS create_toc, @c_icon-create_release AS create_release_toc, @c_icon-create_release_import AS create_release_import_toc
-      WHERE e070~trkorr IN @tranports AND as4user IN @owners AND as4text IN @descriptions
-        AND ( @include_subtransports = @abap_true OR strkorr     = @space )
-        AND ( @include_released      = @abap_true OR trstatus   IN ( 'L', 'D' ) )
-        AND ( @include_tocs          = @abap_true OR trfunction <> 'T' )
-      ORDER BY e070~trkorr DESCENDING, as4date DESCENDING
+      WHERE e070~trkorr IN @tranports AND e070~as4user IN @owners AND as4text IN @descriptions
+        AND ( @include_subtransports = @abap_true OR e070~strkorr     = @space )
+        AND ( @include_released      = @abap_true OR e070~trstatus   IN ( 'L', 'D' ) )
+        AND ( @include_tocs          = @abap_true OR e070~trfunction <> 'T' )
+      ORDER BY e070~trkorr DESCENDING, e070~as4date DESCENDING
       INTO CORRESPONDING FIELDS OF TABLE @report_data.
 
     DELETE ADJACENT DUPLICATES FROM report_data COMPARING transport.
