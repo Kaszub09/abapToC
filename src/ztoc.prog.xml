@@ -43,9 +43,22 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_SUB</KEY>
+     <ENTRY>Include subtransports</ENTRY>
+     <LENGTH>29</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>P_TOCS</KEY>
      <ENTRY>Include ToCs</ENTRY>
      <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>SO_DESCR</KEY>
+     <ENTRY>.</ENTRY>
+     <LENGTH>9</LENGTH>
+     <SPLIT>D</SPLIT>
     </item>
     <item>
      <ID>S</ID>
@@ -85,6 +98,12 @@
       </item>
       <item>
        <ID>S</ID>
+       <KEY>P_SUB</KEY>
+       <ENTRY>Dołącz podtransporty</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
        <KEY>P_TOCS</KEY>
        <ENTRY>Pokaż TK</ENTRY>
        <LENGTH>38</LENGTH>
@@ -92,6 +111,13 @@
       <item>
        <ID>S</ID>
        <KEY>P_LAYOUT</KEY>
+       <ENTRY>.</ENTRY>
+       <LENGTH>9</LENGTH>
+       <SPLIT>D</SPLIT>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>SO_DESCR</KEY>
        <ENTRY>.</ENTRY>
        <LENGTH>9</LENGTH>
        <SPLIT>D</SPLIT>
