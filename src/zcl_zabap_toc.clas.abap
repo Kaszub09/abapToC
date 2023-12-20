@@ -90,7 +90,7 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
           message = replace( val = replace( val = TEXT-e01 sub = '&1' with = |{ sy-subrc }| ) sub = '&2' with = 'TR_READ_REQUEST_WITH_TASKS' ).
     ENDIF.
 
-    LOOP AT request_headers REFERENCE INTO DATA(request_header) where trkorr = source_transport.
+    LOOP AT request_headers REFERENCE INTO DATA(request_header) where trkorr = source_transport or strkorr = source_transport.
       CALL FUNCTION 'TR_COPY_COMM'
         EXPORTING
           wi_dialog                = abap_false
