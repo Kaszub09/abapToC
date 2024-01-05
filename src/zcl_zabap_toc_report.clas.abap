@@ -282,7 +282,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     APPEND VALUE #( fnam = 'TRDYSE01SN-TR_TRKORR' fval = transport ) TO batch_input.
     APPEND VALUE #( fnam = 'BDC_OKCODE' fval = '=SINGLE_REQUEST' ) TO batch_input.
 
-    CALL TRANSACTION 'SE01' USING batch_input MODE 'A' UPDATE 'S'.
+    CALL TRANSACTION 'SE01' USING batch_input MODE 'E' UPDATE 'S'.
   ENDMETHOD.
 
   METHOD on_double_click.
