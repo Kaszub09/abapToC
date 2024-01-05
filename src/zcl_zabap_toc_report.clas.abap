@@ -70,6 +70,7 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       update_import_status,
       on_timer_finished FOR EVENT finished OF cl_gui_timer IMPORTING sender,
       on_link_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row column,
+      on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING sender,
       show_transport_details IMPORTING transport TYPE trkorr.
 ENDCLASS.
 
@@ -192,6 +193,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     " Set handlers
     DATA(event) = alv_table->get_event( ).
     SET HANDLER me->on_link_click FOR event.
+    SET HANDLER me->on_double_click FOR event.
 
     " Set layouts
     alv_table->get_layout( )->set_key( layout_key ).
@@ -281,6 +283,10 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     APPEND VALUE #( fnam = 'BDC_OKCODE' fval = '=SINGLE_REQUEST' ) TO batch_input.
 
     CALL TRANSACTION 'SE01' USING batch_input MODE 'A' UPDATE 'S'.
+  ENDMETHOD.
+
+  METHOD on_double_click.
+
   ENDMETHOD.
 
 ENDCLASS.
