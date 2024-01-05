@@ -69,7 +69,8 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       prepare_alv_table       IMPORTING layout_name TYPE slis_vari OPTIONAL,
       update_import_status,
       on_timer_finished FOR EVENT finished OF cl_gui_timer IMPORTING sender,
-      on_link_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row column.
+      on_link_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row column,
+      show_transport_details IMPORTING transport TYPE trkorr.
 ENDCLASS.
 
 
@@ -112,20 +113,20 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
 
     TRY.
         CASE column.
-          "--------------------------------------------------
+            "--------------------------------------------------
           WHEN c_toc_columns-create_toc.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
             selected->toc_status = TEXT-s01.
             set_status_color( row = row color = c_status_color-green ).
 
-          "--------------------------------------------------
+            "--------------------------------------------------
           WHEN c_toc_columns-create_release_toc.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
             toc_manager->release( selected->toc_number ).
             selected->toc_status = TEXT-s02.
             set_status_color( row = row color = c_status_color-green ).
 
-          "--------------------------------------------------
+            "--------------------------------------------------
           WHEN c_toc_columns-create_release_import_toc.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
             toc_manager->release( selected->toc_number ).
@@ -137,7 +138,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
                                                         WHEN rc = 4 THEN c_status_color-yellow
                                                         ELSE             c_status_color-red ) ).
 
-          "--------------------------------------------------
+            "--------------------------------------------------
           WHEN OTHERS.
         ENDCASE.
 
@@ -271,4 +272,15 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     alv_table->refresh( s_stable = VALUE #( ) refresh_mode = if_salv_c_refresh=>full ).
     cl_gui_cfw=>set_new_ok_code( new_code = '&REFRESHG' ).
   ENDMETHOD.
+
+  METHOD show_transport_details.
+    DATA batch_input TYPE TABLE OF bdcdata.
+
+    APPEND VALUE #( program = 'RDDM0001' dynpro = '0200' dynbegin = 'X' fnam = 'BDC_CURSOR' fval = 'TRDYSE01SN-TR_TRKORR'  ) TO batch_input.
+    APPEND VALUE #( fnam = 'TRDYSE01SN-TR_TRKORR' fval = transport ) TO batch_input.
+    APPEND VALUE #( fnam = 'BDC_OKCODE' fval = '=SINGLE_REQUEST' ) TO batch_input.
+
+    CALL TRANSACTION 'SE01' USING batch_input MODE 'A' UPDATE 'S'.
+  ENDMETHOD.
+
 ENDCLASS.
