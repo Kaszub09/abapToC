@@ -70,7 +70,7 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       update_import_status,
       on_timer_finished FOR EVENT finished OF cl_gui_timer IMPORTING sender,
       on_link_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row column,
-      on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING sender,
+      on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row column,
       show_transport_details IMPORTING transport TYPE trkorr.
 ENDCLASS.
 
@@ -286,7 +286,15 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD on_double_click.
+    DATA(selected) = REF #( report_data[ row ] ).
 
+    CASE column.
+      WHEN 'TRANSPORT'.
+        show_transport_details( selected->transport ).
+
+      WHEN OTHERS.
+
+    ENDCASE.
   ENDMETHOD.
 
 ENDCLASS.
