@@ -19,3 +19,6 @@ ABAP Transport of Copies
    1. Import/Transport project to target system
    2. Create connection for target system in SM59 - for each possible target in transport (e.g. 'SYSTEM', 'SYSTEM.MANDANT' ) create connection with exact same name - will be used to call RFC which unpacks transport. So ZZZ.999 for system ZZZ and mandant 999, or just ZZZ if you don't specify mandant in transports.
    3. [Optional] Set developer system as trusted (via transaction SMT1) at target system. Set Trust Relationship to yes in connections and use Current User. This way you won't have to log into target system everytime you wan't to import transport - you will be automatically logged with current user.
+
+## Notes
+1. Written in ABAP 7.50
