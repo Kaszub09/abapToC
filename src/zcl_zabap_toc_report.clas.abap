@@ -278,11 +278,14 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   METHOD show_transport_details.
     DATA batch_input TYPE TABLE OF bdcdata.
 
-    APPEND VALUE #( program = 'RDDM0001' dynpro = '0200' dynbegin = 'X' fnam = 'BDC_CURSOR' fval = 'TRDYSE01SN-TR_TRKORR'  ) TO batch_input.
+    APPEND VALUE #( program = 'RDDM0001' dynpro = '0200' dynbegin = 'X'  ) TO batch_input.
+    APPEND VALUE #( fnam = 'BDC_OKCODE' fval = '=TSSN' ) TO batch_input.
+    APPEND VALUE #( program = 'RDDM0001' dynpro = '0200' dynbegin = 'X'  ) TO batch_input.
+    APPEND VALUE #( fnam = 'BDC_SUBSCR' fval = 'RDDM0001                                0210COMMONSUBSCREEN' ) TO batch_input.
+    APPEND VALUE #( fnam = 'BDC_CURSOR' fval = 'TRDYSE01SN-TR_TRKORR' ) TO batch_input.
     APPEND VALUE #( fnam = 'TRDYSE01SN-TR_TRKORR' fval = transport ) TO batch_input.
-    APPEND VALUE #( fnam = 'BDC_OKCODE' fval = '=SINGLE_REQUEST' ) TO batch_input.
 
-    CALL TRANSACTION 'SE01' USING batch_input MODE 'E' UPDATE 'S'.
+    CALL TRANSACTION 'SE01' USING batch_input MODE 'E' UPDATE 'A'.
   ENDMETHOD.
 
   METHOD on_double_click.
