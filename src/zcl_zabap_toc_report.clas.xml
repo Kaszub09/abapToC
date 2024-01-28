@@ -44,6 +44,12 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>E01</KEY>
+     <ENTRY>Error during release</ENTRY>
+     <LENGTH>40</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>S01</KEY>
      <ENTRY>Created</ENTRY>
      <LENGTH>17</LENGTH>
@@ -64,6 +70,12 @@
      <ID>I</ID>
      <KEY>S04</KEY>
      <ENTRY>Imported with rc &amp;1</ENTRY>
+     <LENGTH>19</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>S05</KEY>
+     <ENTRY>Releasing...</ENTRY>
      <LENGTH>19</LENGTH>
     </item>
    </TPOOL>

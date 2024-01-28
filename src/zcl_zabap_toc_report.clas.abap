@@ -8,10 +8,12 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
 
     METHODS:
       constructor IMPORTING report_id TYPE sy-repid,
-      gather_transports IMPORTING tranports TYPE tt_range_of_transport OPTIONAL owners TYPE tt_range_of_owner OPTIONAL
-                        descriptions TYPE tt_range_of_description OPTIONAL
-                        include_released TYPE abap_bool DEFAULT abap_true include_tocs TYPE abap_bool DEFAULT abap_false
-                        include_subtransports TYPE abap_bool DEFAULT abap_false,
+      gather_transports IMPORTING tranports             TYPE tt_range_of_transport OPTIONAL
+                                  owners                TYPE tt_range_of_owner OPTIONAL
+                                  descriptions          TYPE tt_range_of_description OPTIONAL
+                                  include_released      TYPE abap_bool DEFAULT abap_false
+                                  include_tocs          TYPE abap_bool DEFAULT abap_false
+                                  include_subtransports TYPE abap_bool DEFAULT abap_false,
       display IMPORTING layout_name TYPE slis_vari OPTIONAL,
       get_layout_from_f4_selection RETURNING VALUE(layout) TYPE slis_vari.
 
@@ -58,7 +60,8 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       toc_manager   TYPE REF TO zcl_zabap_toc,
       layout_key    TYPE salv_s_layout_key,
       report_data   TYPE tt_report,
-      tocs_to_check TYPE HASHED TABLE OF trkorr WITH UNIQUE KEY table_line.
+      tocs_to_check TYPE HASHED TABLE OF trkorr WITH UNIQUE KEY table_line,
+      caller_report TYPE sy-repid.
 
     METHODS:
       set_column_hotspot_icon IMPORTING column TYPE lvc_fname,
@@ -71,12 +74,16 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       on_timer_finished FOR EVENT finished OF cl_gui_timer IMPORTING sender,
       on_link_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row column,
       on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row column,
-      show_transport_details IMPORTING transport TYPE trkorr.
+      on_user_command FOR EVENT added_function OF cl_salv_events IMPORTING e_salv_function,
+      show_transport_details IMPORTING transport TYPE trkorr,
+      refresh_status,
+      call_stms.
 ENDCLASS.
 
 
 CLASS zcl_zabap_toc_report IMPLEMENTATION.
   METHOD constructor.
+    caller_report = report_id.
     layout_key = VALUE salv_s_layout_key( report = report_id ).
     toc_manager = NEW #( ).
     timer = NEW #( ).
@@ -85,21 +92,27 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD gather_transports.
+    SELECT SINGLE version FROM tcevers INTO @DATA(vers) WHERE active = 'A'.
+
     SELECT FROM e070
                 LEFT JOIN e07t ON e07t~trkorr = e070~trkorr
                 LEFT JOIN e070 AS sup ON sup~trkorr = e070~strkorr
-      FIELDS e070~trkorr AS transport, e070~trfunction AS type, e070~as4user AS owner, e070~as4date AS creation_date,
-          CASE WHEN e070~tarsystem <> @space THEN e070~tarsystem ELSE sup~tarsystem END AS target_system,
-          e07t~as4text AS description,
-          @c_icon-create AS create_toc, @c_icon-create_release AS create_release_toc, @c_icon-create_release_import AS create_release_import_toc
+                LEFT JOIN tcetarg ON tcetarg~targ_group = e070~tarsystem
+                                 AND tcetarg~version = @vers
+      FIELDS e070~trkorr AS transport, e070~trfunction AS type,
+             e070~as4user AS owner, e070~as4date AS creation_date,
+             CASE WHEN tcetarg~tarsystem <> @space THEN concat( concat( tcetarg~tarsystem, '.' ), tcetarg~tarclient )
+                  WHEN e070~tarsystem <> @space    THEN e070~tarsystem
+                  ELSE sup~tarsystem
+              END AS target_system,
+             e07t~as4text AS description,
+             @c_icon-create AS create_toc, @c_icon-create_release AS create_release_toc, @c_icon-create_release_import AS create_release_import_toc
       WHERE e070~trkorr IN @tranports AND e070~as4user IN @owners AND as4text IN @descriptions
         AND ( @include_subtransports = @abap_true OR e070~strkorr     = @space )
         AND ( @include_released      = @abap_true OR e070~trstatus   IN ( 'L', 'D' ) )
         AND ( @include_tocs          = @abap_true OR e070~trfunction <> 'T' )
       ORDER BY e070~trkorr DESCENDING, e070~as4date DESCENDING
       INTO CORRESPONDING FIELDS OF TABLE @report_data.
-
-    DELETE ADJACENT DUPLICATES FROM report_data COMPARING transport.
   ENDMETHOD.
 
   METHOD display.
@@ -108,6 +121,12 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD on_link_click.
+
+    DATA: release_status TYPE char03,
+          release_rc     TYPE strw_int4,
+          import_status  TYPE char03,
+          import_rc      TYPE strw_int4.
+
     DATA(selected) = REF #( report_data[ row ] ).
     CLEAR selected->color.
     DELETE tocs_to_check WHERE table_line = selected->toc_number.
@@ -116,28 +135,46 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
         CASE column.
             "--------------------------------------------------
           WHEN c_toc_columns-create_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
+            selected->toc_number = toc_manager->create( source_transport = selected->transport source_description = selected->description target_system = selected->target_system ).
             selected->toc_status = TEXT-s01.
             set_status_color( row = row color = c_status_color-green ).
 
             "--------------------------------------------------
           WHEN c_toc_columns-create_release_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
+            IF selected->toc_number IS INITIAL.
+              selected->toc_number = toc_manager->create( source_transport = selected->transport source_description = selected->description target_system = selected->target_system ).
+            ENDIF.
             toc_manager->release( selected->toc_number ).
-            selected->toc_status = TEXT-s02.
-            set_status_color( row = row color = c_status_color-green ).
+            release_status = toc_manager->check_release_status( selected->toc_number ).
+            CASE release_status.
+              WHEN 'RUN'.
+                selected->toc_status = TEXT-s05.
+                set_status_color( row = row color = c_status_color-yellow ).
+              WHEN 'REL'.
+                selected->toc_status = TEXT-s02.
+                set_status_color( row = row color = c_status_color-green ).
+            ENDCASE.
+
 
             "--------------------------------------------------
           WHEN c_toc_columns-create_release_import_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
-            toc_manager->release( selected->toc_number ).
-            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system ) ).
-            selected->toc_status = TEXT-s03.
-            " set_status_timer( selected->toc_number ).
-            selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
-            set_status_color( row = row color = COND #( WHEN rc = 0 THEN c_status_color-green
-                                                        WHEN rc = 4 THEN c_status_color-yellow
-                                                        ELSE             c_status_color-red ) ).
+            IF selected->toc_number IS INITIAL.
+              selected->toc_number = toc_manager->create( source_transport = selected->transport source_description = selected->description target_system = selected->target_system ).
+            ENDIF.
+            release_status = toc_manager->check_release_status( selected->toc_number ).
+            IF release_status IS INITIAL.
+              toc_manager->release( selected->toc_number ).
+              release_status = toc_manager->check_release_status( selected->toc_number ).
+            ENDIF.
+            IF release_status = 'REL'.
+              DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system ) ).
+              selected->toc_status = TEXT-s03.
+              " set_status_timer( selected->toc_number ).
+              selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
+              set_status_color( row = row color = COND #( WHEN rc = 0 THEN c_status_color-green
+                                                          WHEN rc = 4 THEN c_status_color-yellow
+                                                          ELSE             c_status_color-red ) ).
+            ENDIF.
 
             "--------------------------------------------------
           WHEN OTHERS.
@@ -194,6 +231,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DATA(event) = alv_table->get_event( ).
     SET HANDLER me->on_link_click FOR event.
     SET HANDLER me->on_double_click FOR event.
+    SET HANDLER me->on_user_command FOR event.
 
     " Set layouts
     alv_table->get_layout( )->set_key( layout_key ).
@@ -204,7 +242,11 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     ENDIF.
 
     " Enable standard report functions
-    alv_table->get_functions( )->set_all( ).
+*    alv_table->get_functions( )->set_all( ).
+    alv_table->set_screen_status(
+      pfstatus      = 'SALV_STANDARD'
+      report        = caller_report
+      set_functions = alv_table->c_functions_all ).
 
     " Color
     alv_table->get_columns( )->set_color_column( 'COLOR' ).
@@ -298,6 +340,54 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
       WHEN OTHERS.
 
     ENDCASE.
+  ENDMETHOD.
+
+  METHOD on_user_command.
+
+    CASE e_salv_function.
+      WHEN 'REFRESH'.
+        refresh_status( ).
+      WHEN 'STMS'.
+        call_stms( ).
+    ENDCASE.
+
+
+  ENDMETHOD.
+
+  METHOD call_stms.
+    DATA batch_input TYPE TABLE OF bdcdata.
+
+    APPEND VALUE #( program = 'SAPLTMSU' dynpro = '0100' dynbegin = 'X'  ) TO batch_input.
+    APPEND VALUE #( fnam = 'BDC_OKCODE' fval = '=IMPO' ) TO batch_input.
+
+    CALL TRANSACTION 'STMS' USING batch_input MODE 'E' UPDATE 'A'.
+
+  ENDMETHOD.
+
+  METHOD refresh_status.
+
+    LOOP AT report_data ASSIGNING FIELD-SYMBOL(<fs>)
+        WHERE toc_number <> ''.
+
+      CASE toc_manager->check_release_status( <fs>-toc_number ).
+        WHEN ''.
+          <fs>-toc_status = TEXT-s01.
+          CLEAR <fs>-color.
+          APPEND VALUE #( fname = 'TOC_STATUS' color = VALUE #( col = c_status_color-green ) ) TO <fs>-color.
+        WHEN 'RUN'.
+          <fs>-toc_status = TEXT-s05.
+          CLEAR <fs>-color.
+          APPEND VALUE #( fname = 'TOC_STATUS' color = VALUE #( col = c_status_color-yellow ) ) TO <fs>-color.
+        WHEN 'REL'.
+          CLEAR <fs>-color.
+          APPEND VALUE #( fname = 'TOC_STATUS' color = VALUE #( col = c_status_color-green ) ) TO <fs>-color.
+          <fs>-toc_status = TEXT-s02.
+      ENDCASE.
+    ENDLOOP.
+    IF sy-subrc = 0.
+      alv_table->refresh( ).
+    ENDIF.
+
   ENDMETHOD.
 
 ENDCLASS.

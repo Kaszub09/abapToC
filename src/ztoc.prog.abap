@@ -8,29 +8,34 @@ REPORT ztoc.
 " -----------------------------------------------------------------------
 TABLES: e070, e07t.
 
-SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE TEXT-b01.
-  SELECT-OPTIONS so_trnum FOR e070-trkorr. " Transport numbers
-  SELECT-OPTIONS so_owner FOR e070-as4user default sy-uname. " Transport owners
-  SELECT-OPTIONS so_descr for e07t-as4text.
-  PARAMETERS p_reltr AS CHECKBOX. " Include released transports
-  PARAMETERS p_tocs AS CHECKBOX. " Include ToCs
-  PARAMETERS p_sub AS CHECKBOX. " Include subtransports
-SELECTION-SCREEN END OF BLOCK b01.
-
-SELECTION-SCREEN BEGIN OF BLOCK b02 WITH FRAME TITLE TEXT-b02.
-  PARAMETERS p_layout TYPE disvariant-variant.
-SELECTION-SCREEN END OF BLOCK b02.
+*SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE TEXT-b01.
+*SELECT-OPTIONS so_trnum FOR e070-trkorr. " Transport numbers
+*SELECT-OPTIONS so_owner FOR e070-as4user DEFAULT sy-uname. " Transport owners
+*SELECT-OPTIONS so_descr FOR e07t-as4text.
+*PARAMETERS p_reltr AS CHECKBOX. " Include released transports
+*PARAMETERS p_tocs AS CHECKBOX. " Include ToCs
+*PARAMETERS p_sub AS CHECKBOX. " Include subtransports
+*SELECTION-SCREEN END OF BLOCK b01.
+*
+*SELECTION-SCREEN BEGIN OF BLOCK b02 WITH FRAME TITLE TEXT-b02.
+PARAMETERS p_layout TYPE disvariant-variant NO-DISPLAY.
+*SELECTION-SCREEN END OF BLOCK b02.
 
 " -----------------------------------------------------------------------
+
 INITIALIZATION.
   DATA(report) = NEW zcl_zabap_toc_report( report_id = sy-repid ).
 
   " -----------------------------------------------------------------------
+
 START-OF-SELECTION.
-  report->gather_transports( tranports = so_trnum[] owners = so_owner[] descriptions = so_descr[]
-                             include_released = p_reltr include_tocs = p_tocs include_subtransports = p_sub ).
+*  report->gather_transports( tranports = so_trnum[] owners = so_owner[] descriptions = so_descr[]
+*                             include_released = p_reltr include_tocs = p_tocs include_subtransports = p_sub ).
+  DATA(so_owner) = VALUE zcl_zabap_toc_report=>tt_range_of_owner( ( sign = 'I' option = 'EQ' low = sy-uname ) ).
+  report->gather_transports( owners = so_owner[] ).
   report->display( p_layout ).
 
   " -----------------------------------------------------------------------
-AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_layout.
-  p_layout = report->get_layout_from_f4_selection( ).
+
+*AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_layout.
+*  p_layout = report->get_layout_from_f4_selection( ).
