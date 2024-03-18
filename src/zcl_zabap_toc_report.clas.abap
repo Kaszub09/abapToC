@@ -272,7 +272,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     ENDIF.
 
     alv_table->refresh( s_stable = VALUE #( ) refresh_mode = if_salv_c_refresh=>full ).
-    cl_gui_cfw=>set_new_ok_code( new_code = '&REFRESHG' ).
+    cl_gui_cfw=>set_new_ok_code( '&REFRESHG' ).
   ENDMETHOD.
 
   METHOD show_transport_details.
@@ -285,7 +285,8 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     APPEND VALUE #( fnam = 'BDC_CURSOR' fval = 'TRDYSE01SN-TR_TRKORR' ) TO batch_input.
     APPEND VALUE #( fnam = 'TRDYSE01SN-TR_TRKORR' fval = transport ) TO batch_input.
 
-    CALL TRANSACTION 'SE01' USING batch_input MODE 'E' UPDATE 'A'.
+    DATA(call_options) = VALUE ctu_params( dismode = 'E' updmode  = 'A' nobinpt = abap_true nobiend = abap_true ).
+    CALL TRANSACTION 'SE01' USING batch_input OPTIONS FROM call_options.
   ENDMETHOD.
 
   METHOD on_double_click.
