@@ -50,7 +50,7 @@ CLASS zcl_zabap_toc_description IMPLEMENTATION.
 
       WHEN c_toc_description-original. toc_description = original_desciption.
 
-      WHEN c_toc_description-toc.
+      WHEN c_toc_description-custom.
         DATA(description) = REF #( descriptions[ transport = original_transport ] OPTIONAL ).
         IF NOT description IS BOUND.
           INSERT VALUE #( transport = original_transport description = original_desciption use_counter = abap_false counter = 0
