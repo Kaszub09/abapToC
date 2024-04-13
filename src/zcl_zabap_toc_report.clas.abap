@@ -113,7 +113,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     col->set_icon( if_salv_c_bool_sap=>true ).
     col->set_cell_type( if_salv_c_cell_type=>hotspot ).
     alv_table->get_selections( )->set_selection_mode( if_salv_c_selection_mode=>row_column ).
-     alv_table->set_screen_status( report = 'ZTOC' pfstatus = 'MAIN' ).
+    alv_table->set_screen_status( report = 'ZTOC' pfstatus = 'MAIN' ).
   ENDMETHOD.
 
   METHOD set_fixed_column_text.
@@ -243,7 +243,26 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD on_added_function.
+    DATA selected_row TYPE REF TO i.
 
+    CASE e_salv_function.
+      WHEN 'TOC_C'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_toc ) ).
+        ENDLOOP.
+
+      WHEN 'TOC_CR'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_toc ) ).
+        ENDLOOP.
+
+      WHEN 'TOC_CRI'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_import_toc ) ).
+        ENDLOOP.
+      WHEN OTHERS.
+
+    ENDCASE.
   ENDMETHOD.
 
   METHOD show_transport_details.
