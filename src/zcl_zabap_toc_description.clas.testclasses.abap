@@ -22,9 +22,9 @@ CLASS ltcl_toc_description IMPLEMENTATION.
 
   METHOD increment_counter.
     cut->selected_description = zcl_zabap_toc_description=>c_toc_description-custom.
-    cut->descriptions = VALUE #( ( transport = space ask_user = abap_false counter = 2 description = 'TEST' ) ).
+    cut->descriptions = VALUE #( ( transport = space ask_user = abap_false use_counter = abap_true counter = 2 description = 'TEST' ) ).
 
-    cl_abap_unit_assert=>assert_char_cp( act = cut->get_toc_description( space ) exp = '*3' ).
+    cl_abap_unit_assert=>assert_char_cp( act = cut->get_toc_description( space ) exp = '*3*' ).
   ENDMETHOD.
 
   METHOD counter_description.

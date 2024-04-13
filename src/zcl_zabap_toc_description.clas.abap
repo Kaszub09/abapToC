@@ -64,8 +64,8 @@ CLASS zcl_zabap_toc_description IMPLEMENTATION.
         ENDIF.
 
         IF description->use_counter = abap_true.
-          toc_description = replace( val = replace( val = TEXT-002 sub = '&1' with = description->description )
-                                     sub = '&2' with = CONV string( description->counter ) ).
+          toc_description = condense( replace( val = replace( val = TEXT-002 sub = '&1' with = description->description )
+                                     sub = '&2' with = CONV string( description->counter ) ) ).
         ELSE.
           toc_description = description->description.
         ENDIF.
