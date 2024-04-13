@@ -37,19 +37,19 @@
     <item>
      <ID>S</ID>
      <KEY>P_DESCUS</KEY>
-     <ENTRY>Custom</ENTRY>
-     <LENGTH>14</LENGTH>
+     <ENTRY>Custom/Numbered</ENTRY>
+     <LENGTH>23</LENGTH>
     </item>
     <item>
      <ID>S</ID>
      <KEY>P_DESORI</KEY>
-     <ENTRY>Same as original request</ENTRY>
+     <ENTRY>Same as source request</ENTRY>
      <LENGTH>32</LENGTH>
     </item>
     <item>
      <ID>S</ID>
      <KEY>P_DESTOC</KEY>
-     <ENTRY>ToC + original request number</ENTRY>
+     <ENTRY>ToC + source request number</ENTRY>
      <LENGTH>37</LENGTH>
     </item>
     <item>
@@ -113,6 +113,24 @@
        <ID>R</ID>
        <ENTRY>ZABAP Transport kopii</ENTRY>
        <LENGTH>70</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_DESCUS</KEY>
+       <ENTRY>Dowolny/Numerowany</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_DESORI</KEY>
+       <ENTRY>Taki sam jak źródłowy</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_DESTOC</KEY>
+       <ENTRY>TK + numer transp. źródłowego</ENTRY>
+       <LENGTH>38</LENGTH>
       </item>
       <item>
        <ID>S</ID>
