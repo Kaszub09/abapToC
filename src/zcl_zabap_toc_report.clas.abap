@@ -63,9 +63,10 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       set_fixed_column_text   IMPORTING column TYPE lvc_fname text TYPE scrtext_l,
       set_status_color IMPORTING row TYPE i color TYPE i,
       set_entry_color IMPORTING entry TYPE REF TO t_report color TYPE i,
-      prepare_alv_table       IMPORTING layout_name TYPE slis_vari OPTIONAL,
+      prepare_alv_table IMPORTING layout_name TYPE slis_vari OPTIONAL,
       on_link_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row column,
       on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row column,
+      on_added_function FOR EVENT added_function OF cl_salv_events IMPORTING e_salv_function ,
       show_transport_details IMPORTING transport TYPE trkorr.
 ENDCLASS.
 
@@ -111,6 +112,8 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DATA(col) = CAST cl_salv_column_table( me->alv_table->get_columns( )->get_column( column ) ).
     col->set_icon( if_salv_c_bool_sap=>true ).
     col->set_cell_type( if_salv_c_cell_type=>hotspot ).
+    alv_table->get_selections( )->set_selection_mode( if_salv_c_selection_mode=>row_column ).
+    alv_table->set_screen_status( report = 'ZTOC' pfstatus = 'MAIN' ).
   ENDMETHOD.
 
   METHOD set_fixed_column_text.
@@ -149,6 +152,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DATA(event) = alv_table->get_event( ).
     SET HANDLER me->on_link_click FOR event.
     SET HANDLER me->on_double_click FOR event.
+    SET HANDLER me->on_added_function FOR event.
 
     " Set layouts
     alv_table->get_layout( )->set_key( layout_key ).
@@ -218,7 +222,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
         set_status_color( row = row color = c_status_color-red ).
 
       CATCH zcx_zabap_user_cancel INTO DATA(user_canceled).
-        selected->toc_status = TEXT-E01.
+        selected->toc_status = TEXT-e01.
         set_status_color( row = row color = c_status_color-red ).
 
     ENDTRY.
@@ -238,6 +242,29 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     ENDCASE.
   ENDMETHOD.
 
+  METHOD on_added_function.
+    DATA selected_row TYPE REF TO i.
+
+    CASE e_salv_function.
+      WHEN 'TOC_C'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_toc ) ).
+        ENDLOOP.
+
+      WHEN 'TOC_CR'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_toc ) ).
+        ENDLOOP.
+
+      WHEN 'TOC_CRI'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_import_toc ) ).
+        ENDLOOP.
+      WHEN OTHERS.
+
+    ENDCASE.
+  ENDMETHOD.
+
   METHOD show_transport_details.
     DATA batch_input TYPE TABLE OF bdcdata.
 
@@ -251,5 +278,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DATA(call_options) = VALUE ctu_params( dismode = 'E' updmode  = 'A' nobinpt = abap_true nobiend = abap_true ).
     CALL TRANSACTION 'SE01' USING batch_input OPTIONS FROM call_options.
   ENDMETHOD.
+
+
 
 ENDCLASS.
