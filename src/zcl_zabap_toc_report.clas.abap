@@ -260,6 +260,10 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
         LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
           on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_import_toc ) ).
         ENDLOOP.
+
+      WHEN 'STMS'.
+        CALL TRANSACTION 'STMS'.
+
       WHEN OTHERS.
 
     ENDCASE.
