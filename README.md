@@ -22,3 +22,7 @@ ABAP Transport of Copies
 
 ## Notes
 1. Written in ABAP 7.50
+
+## Changelog
+
+- v1.1 - allow user to choose between 3 types of descriptions - ToC + original request number, original request description, or custom / numbered description
