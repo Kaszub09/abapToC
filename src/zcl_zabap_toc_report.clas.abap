@@ -140,6 +140,11 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
         selected->toc_status = exception->get_text( ).
         set_status_color( row = row color = c_status_color-red ).
 
+      CATCH zcx_zabap_user_cancel INTO DATA(user_canceled).
+        selected->toc_status = TEXT-E01.
+        set_status_color( row = row color = c_status_color-red ).
+
+
     ENDTRY.
 
     alv_table->refresh( refresh_mode = if_salv_c_refresh=>full ).

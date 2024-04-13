@@ -6,9 +6,9 @@ CLASS zcl_zabap_toc DEFINITION
   PUBLIC SECTION.
     METHODS:
       constructor IMPORTING toc_description TYPE REF TO zcl_zabap_toc_description,
-      create IMPORTING source_transport TYPE trkorr source_description type string target_system TYPE tr_target
+      create IMPORTING source_transport TYPE trkorr source_description TYPE string target_system TYPE tr_target
              RETURNING VALUE(toc) TYPE trkorr
-             RAISING zcx_zabap_exception,
+             RAISING zcx_zabap_exception zcx_zabap_user_cancel,
       release IMPORTING toc TYPE trkorr RAISING zcx_zabap_exception,
       import IMPORTING toc TYPE trkorr target_system TYPE tr_target RETURNING VALUE(ret_code) TYPE trretcode RAISING zcx_zabap_exception,
       import_objects IMPORTING source_transport TYPE trkorr destination_transport TYPE trkorr RAISING zcx_zabap_exception,
@@ -50,10 +50,13 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
   METHOD create.
     TRY.
         cl_adt_cts_management=>create_empty_request( EXPORTING iv_type = 'T'
-            iv_text = conv #( toc_description->get_toc_description( original_transport = source_transport original_desciption = source_description ) )
+            iv_text = CONV #( toc_description->get_toc_description( original_transport = source_transport original_desciption = source_description ) )
             iv_target = target_system IMPORTING es_request_header = DATA(transport_header) ).
         import_objects( source_transport = source_transport destination_transport = transport_header-trkorr ).
         toc = transport_header-trkorr.
+
+      CATCH zcx_zabap_user_cancel INTO DATA(zcx).
+        RAISE EXCEPTION TYPE zcx_zabap_user_cancel.
 
       CATCH cx_root INTO DATA(cx).
         RAISE EXCEPTION TYPE zcx_zabap_exception EXPORTING message = replace( val = TEXT-e01 sub = '&1' with = cx->get_text( ) ).
