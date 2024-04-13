@@ -5,7 +5,10 @@ CLASS zcl_zabap_toc DEFINITION
 
   PUBLIC SECTION.
     METHODS:
-      create IMPORTING source_transport TYPE trkorr target_system TYPE tr_target RETURNING VALUE(toc) TYPE trkorr RAISING zcx_zabap_exception,
+      constructor IMPORTING toc_description TYPE REF TO zcl_zabap_toc_description,
+      create IMPORTING source_transport TYPE trkorr source_description type string target_system TYPE tr_target
+             RETURNING VALUE(toc) TYPE trkorr
+             RAISING zcx_zabap_exception,
       release IMPORTING toc TYPE trkorr RAISING zcx_zabap_exception,
       import IMPORTING toc TYPE trkorr target_system TYPE tr_target RETURNING VALUE(ret_code) TYPE trretcode RAISING zcx_zabap_exception,
       import_objects IMPORTING source_transport TYPE trkorr destination_transport TYPE trkorr RAISING zcx_zabap_exception,
@@ -13,12 +16,15 @@ CLASS zcl_zabap_toc DEFINITION
 
   PRIVATE SECTION.
     DATA c_transport_type_toc TYPE trfunction VALUE 'T'.
-
-    METHODS get_toc_description IMPORTING source_transport TYPE trkorr RETURNING VALUE(description) TYPE string.
+    DATA toc_description TYPE REF TO zcl_zabap_toc_description.
 ENDCLASS.
 
 
 CLASS zcl_zabap_toc IMPLEMENTATION.
+  METHOD constructor.
+    me->toc_description = toc_description.
+  ENDMETHOD.
+
   METHOD check_status_in_system.
     DATA:
       settings TYPE ctslg_settings,
@@ -43,8 +49,9 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
 
   METHOD create.
     TRY.
-        cl_adt_cts_management=>create_empty_request( EXPORTING iv_type = 'T' iv_text = CONV #( get_toc_description( source_transport ) )
-                                               iv_target = target_system IMPORTING es_request_header = DATA(transport_header) ).
+        cl_adt_cts_management=>create_empty_request( EXPORTING iv_type = 'T'
+            iv_text = conv #( toc_description->get_toc_description( original_transport = source_transport original_desciption = source_description ) )
+            iv_target = target_system IMPORTING es_request_header = DATA(transport_header) ).
         import_objects( source_transport = source_transport destination_transport = transport_header-trkorr ).
         toc = transport_header-trkorr.
 
@@ -90,7 +97,7 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
           message = replace( val = replace( val = TEXT-e01 sub = '&1' with = |{ sy-subrc }| ) sub = '&2' with = 'TR_READ_REQUEST_WITH_TASKS' ).
     ENDIF.
 
-    LOOP AT request_headers REFERENCE INTO DATA(request_header) where trkorr = source_transport or strkorr = source_transport.
+    LOOP AT request_headers REFERENCE INTO DATA(request_header) WHERE trkorr = source_transport OR strkorr = source_transport.
       CALL FUNCTION 'TR_COPY_COMM'
         EXPORTING
           wi_dialog                = abap_false
@@ -127,9 +134,4 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
         RAISE EXCEPTION TYPE zcx_zabap_exception EXPORTING message = replace( val = TEXT-e02 sub = '&1' with = cx->get_text( ) ).
     ENDTRY.
   ENDMETHOD.
-
-  METHOD get_toc_description.
-    description = replace( val = TEXT-t01 sub = '&1' with = source_transport ).
-  ENDMETHOD.
-
 ENDCLASS.

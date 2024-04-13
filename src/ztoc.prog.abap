@@ -18,7 +18,7 @@ PARAMETERS p_sub AS CHECKBOX. " Include subtransports
 SELECTION-SCREEN END OF BLOCK b01.
 
 SELECTION-SCREEN BEGIN OF BLOCK b02 WITH FRAME TITLE TEXT-b02.
-PARAMETERS p_destoc RADIOBUTTON GROUP desc.
+PARAMETERS p_destoc RADIOBUTTON GROUP desc DEFAULT 'X'.
 PARAMETERS p_desori RADIOBUTTON GROUP desc.
 PARAMETERS p_descus RADIOBUTTON GROUP desc.
 SELECTION-SCREEN END OF BLOCK b02.
@@ -35,6 +35,9 @@ INITIALIZATION.
   " -----------------------------------------------------------------------
 
 START-OF-SELECTION.
+  report->set_toc_description( toc_description = NEW #( COND #( WHEN p_destoc = abap_true THEN zcl_zabap_toc_description=>c_toc_description-toc
+      WHEN p_desori = abap_true THEN zcl_zabap_toc_description=>c_toc_description-original
+      WHEN p_descus = abap_true THEN zcl_zabap_toc_description=>c_toc_description-custom ) ) ).
   report->gather_transports( tranports = so_trnum[] owners = so_owner[] descriptions = so_descr[]
                              include_released = p_reltr include_tocs = p_tocs include_subtransports = p_sub ).
   report->display( p_layout ).

@@ -7,7 +7,8 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       tt_range_of_description TYPE RANGE OF as4text.
 
     METHODS:
-      constructor IMPORTING report_id TYPE sy-repid,
+      constructor IMPORTING report_id TYPE sy-repid ,
+      set_toc_description IMPORTING toc_description TYPE REF TO zcl_zabap_toc_description,
       gather_transports IMPORTING tranports TYPE tt_range_of_transport OPTIONAL owners TYPE tt_range_of_owner OPTIONAL
                         descriptions TYPE tt_range_of_description OPTIONAL
                         include_released TYPE abap_bool DEFAULT abap_true include_tocs TYPE abap_bool DEFAULT abap_false
@@ -52,10 +53,10 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       END OF c_status_color.
 
     DATA:
-      alv_table     TYPE REF TO cl_salv_table,
-      toc_manager   TYPE REF TO zcl_zabap_toc,
-      layout_key    TYPE salv_s_layout_key,
-      report_data   TYPE tt_report.
+      alv_table   TYPE REF TO cl_salv_table,
+      toc_manager TYPE REF TO zcl_zabap_toc,
+      layout_key  TYPE salv_s_layout_key,
+      report_data TYPE tt_report.
 
     METHODS:
       set_column_hotspot_icon IMPORTING column TYPE lvc_fname,
@@ -72,7 +73,7 @@ ENDCLASS.
 CLASS zcl_zabap_toc_report IMPLEMENTATION.
   METHOD constructor.
     layout_key = VALUE salv_s_layout_key( report = report_id ).
-    toc_manager = NEW #( ).
+    toc_manager = NEW #( NEW zcl_zabap_toc_description( zcl_zabap_toc_description=>c_toc_description-toc ) ).
   ENDMETHOD.
 
   METHOD gather_transports.
@@ -106,20 +107,23 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
         CASE column.
             "--------------------------------------------------
           WHEN c_toc_columns-create_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+                                                        source_description = CONV #( selected->description ) ).
             selected->toc_status = TEXT-s01.
             set_status_color( row = row color = c_status_color-green ).
 
             "--------------------------------------------------
           WHEN c_toc_columns-create_release_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+                                                        source_description = CONV #( selected->description ) ).
             toc_manager->release( selected->toc_number ).
             selected->toc_status = TEXT-s02.
             set_status_color( row = row color = c_status_color-green ).
 
             "--------------------------------------------------
           WHEN c_toc_columns-create_release_import_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system ).
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+                                                        source_description = CONV #( selected->description ) ).
             toc_manager->release( selected->toc_number ).
             DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system ) ).
             selected->toc_status = TEXT-s03.
@@ -238,6 +242,10 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
       WHEN OTHERS.
 
     ENDCASE.
+  ENDMETHOD.
+
+  METHOD set_toc_description.
+    toc_manager = NEW #( toc_description ).
   ENDMETHOD.
 
 ENDCLASS.
