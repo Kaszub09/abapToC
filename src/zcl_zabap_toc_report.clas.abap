@@ -63,9 +63,10 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       set_fixed_column_text   IMPORTING column TYPE lvc_fname text TYPE scrtext_l,
       set_status_color IMPORTING row TYPE i color TYPE i,
       set_entry_color IMPORTING entry TYPE REF TO t_report color TYPE i,
-      prepare_alv_table       IMPORTING layout_name TYPE slis_vari OPTIONAL,
+      prepare_alv_table IMPORTING layout_name TYPE slis_vari OPTIONAL,
       on_link_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row column,
       on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row column,
+      on_added_function FOR EVENT added_function OF cl_salv_events IMPORTING e_salv_function ,
       show_transport_details IMPORTING transport TYPE trkorr.
 ENDCLASS.
 
@@ -151,6 +152,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DATA(event) = alv_table->get_event( ).
     SET HANDLER me->on_link_click FOR event.
     SET HANDLER me->on_double_click FOR event.
+    SET HANDLER me->on_added_function FOR event.
 
     " Set layouts
     alv_table->get_layout( )->set_key( layout_key ).
@@ -240,6 +242,10 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     ENDCASE.
   ENDMETHOD.
 
+  METHOD on_added_function.
+
+  ENDMETHOD.
+
   METHOD show_transport_details.
     DATA batch_input TYPE TABLE OF bdcdata.
 
@@ -253,5 +259,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DATA(call_options) = VALUE ctu_params( dismode = 'E' updmode  = 'A' nobinpt = abap_true nobiend = abap_true ).
     CALL TRANSACTION 'SE01' USING batch_input OPTIONS FROM call_options.
   ENDMETHOD.
+
+
 
 ENDCLASS.
