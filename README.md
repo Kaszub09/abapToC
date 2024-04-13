@@ -26,4 +26,5 @@ ABAP Transport of Copies
 ## Changelog
 
 - v1.1 - allow user to choose between 3 types of descriptions - ToC + original request number, original request description, or custom / numbered description
-- V1.2 - allow user mass action on all selected ToCs
+- v1.2 - allow user mass action on all selected ToCs
+- v1.2.1 - add STMS button
