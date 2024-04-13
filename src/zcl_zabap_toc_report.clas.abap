@@ -49,26 +49,20 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
         green  TYPE i VALUE 5,
         yellow TYPE i VALUE 3,
         red    TYPE i VALUE 6,
-      END OF c_status_color,
-      c_status_check_interval_sec TYPE i VALUE 5.
+      END OF c_status_color.
 
     DATA:
-      timer         TYPE REF TO cl_gui_timer,
       alv_table     TYPE REF TO cl_salv_table,
       toc_manager   TYPE REF TO zcl_zabap_toc,
       layout_key    TYPE salv_s_layout_key,
-      report_data   TYPE tt_report,
-      tocs_to_check TYPE HASHED TABLE OF trkorr WITH UNIQUE KEY table_line.
+      report_data   TYPE tt_report.
 
     METHODS:
       set_column_hotspot_icon IMPORTING column TYPE lvc_fname,
       set_fixed_column_text   IMPORTING column TYPE lvc_fname text TYPE scrtext_l,
       set_status_color IMPORTING row TYPE i color TYPE i,
       set_entry_color IMPORTING entry TYPE REF TO t_report color TYPE i,
-      set_status_timer IMPORTING transport_to_check TYPE trkorr,
       prepare_alv_table       IMPORTING layout_name TYPE slis_vari OPTIONAL,
-      update_import_status,
-      on_timer_finished FOR EVENT finished OF cl_gui_timer IMPORTING sender,
       on_link_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row column,
       on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row column,
       show_transport_details IMPORTING transport TYPE trkorr.
@@ -79,9 +73,6 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   METHOD constructor.
     layout_key = VALUE salv_s_layout_key( report = report_id ).
     toc_manager = NEW #( ).
-    timer = NEW #( ).
-    timer->interval = c_status_check_interval_sec.
-    SET HANDLER on_timer_finished FOR timer.
   ENDMETHOD.
 
   METHOD gather_transports.
@@ -110,7 +101,6 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   METHOD on_link_click.
     DATA(selected) = REF #( report_data[ row ] ).
     CLEAR selected->color.
-    DELETE tocs_to_check WHERE table_line = selected->toc_number.
 
     TRY.
         CASE column.
@@ -133,7 +123,6 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
             toc_manager->release( selected->toc_number ).
             DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system ) ).
             selected->toc_status = TEXT-s03.
-            " set_status_timer( selected->toc_number ).
             selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
             set_status_color( row = row color = COND #( WHEN rc = 0 THEN c_status_color-green
                                                         WHEN rc = 4 THEN c_status_color-yellow
@@ -223,56 +212,6 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   METHOD set_entry_color.
     CLEAR entry->color.
     APPEND VALUE #( fname = 'TOC_STATUS' color = VALUE #( col = color ) ) TO entry->color.
-  ENDMETHOD.
-
-  METHOD on_timer_finished.
-    update_import_status( ).
-    IF lines( tocs_to_check ) > 0.
-      sender->interval = c_status_check_interval_sec.
-      sender->run( ).
-    ENDIF.
-  ENDMETHOD.
-
-  METHOD set_status_timer.
-    IF NOT line_exists( tocs_to_check[ table_line = transport_to_check ] ).
-      INSERT transport_to_check INTO TABLE tocs_to_check.
-    ENDIF.
-
-    timer->run( ).
-  ENDMETHOD.
-
-  METHOD update_import_status.
-    DATA tocs_to_remove TYPE RANGE OF trkorr.
-
-    LOOP AT tocs_to_check REFERENCE INTO DATA(toc).
-      DATA(entry) = REF #( me->report_data[ KEY toc toc_number = toc->* ] OPTIONAL ).
-      IF NOT entry IS BOUND.
-        APPEND VALUE #( sign = 'I' option = 'EQ' low = toc->* ) TO tocs_to_remove.
-        CONTINUE.
-      ENDIF.
-
-      TRY.
-          toc_manager->check_status_in_system( EXPORTING toc = toc->* system = entry->target_system IMPORTING imported = DATA(imported) rc = DATA(rc) ).
-          IF imported = abap_true.
-            entry->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
-            set_entry_color( entry = entry color = COND #( WHEN rc = 0 THEN c_status_color-green
-                                                           WHEN rc = 8 THEN c_status_color-red
-                                                           ELSE             c_status_color-yellow ) ).
-            APPEND VALUE #( sign = 'I' option = 'EQ' low = toc->* ) TO tocs_to_remove.
-          ENDIF.
-
-        CATCH zcx_zabap_exception INTO DATA(exception).
-          entry->toc_status = exception->get_text( ).
-          set_entry_color( entry = entry color = c_status_color-red ).
-
-      ENDTRY.
-    ENDLOOP.
-    IF lines( tocs_to_remove ) > 0.
-      DELETE tocs_to_check WHERE table_line IN tocs_to_remove.
-    ENDIF.
-
-    alv_table->refresh( s_stable = VALUE #( ) refresh_mode = if_salv_c_refresh=>full ).
-    cl_gui_cfw=>set_new_ok_code( '&REFRESHG' ).
   ENDMETHOD.
 
   METHOD show_transport_details.

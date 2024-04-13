@@ -5,7 +5,7 @@ CLASS zif_zabap_toc_version DEFINITION
 
   PUBLIC SECTION.
     CONSTANTS:
-        c_version TYPE string VALUE '1.0.1'.
+        c_version TYPE string VALUE '1.0.2'.
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.
