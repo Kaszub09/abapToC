@@ -111,7 +111,8 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DATA(col) = CAST cl_salv_column_table( me->alv_table->get_columns( )->get_column( column ) ).
     col->set_icon( if_salv_c_bool_sap=>true ).
     col->set_cell_type( if_salv_c_cell_type=>hotspot ).
-    alv_table->get_selections( )->set_selection_mode( if_salv_c_selection_mode=>multiple ).
+    alv_table->get_selections( )->set_selection_mode( if_salv_c_selection_mode=>row_column ).
+     alv_table->set_screen_status( report = 'ZTOC' pfstatus = 'MAIN' ).
   ENDMETHOD.
 
   METHOD set_fixed_column_text.
