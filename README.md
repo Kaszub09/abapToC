@@ -28,3 +28,4 @@ ABAP Transport of Copies
 - v1.1 - allow user to choose between 3 types of descriptions - ToC + original request number, original request description, or custom / numbered description
 - v1.2 - allow user mass action on all selected ToCs
 - v1.2.1 - add STMS button
+- v1.3 - retry importing ToC for a specified amount of time if not yet visible in target system (apparently, release funciton isn't fully synchronous?)
