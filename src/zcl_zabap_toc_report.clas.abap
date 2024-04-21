@@ -7,7 +7,8 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       tt_range_of_description TYPE RANGE OF as4text.
 
     METHODS:
-      constructor IMPORTING report_id TYPE sy-repid ,
+      constructor IMPORTING report_id TYPE sy-repid,
+      set_max_wait_time IMPORTING seconds TYPE i,
       set_toc_description IMPORTING toc_description TYPE REF TO zcl_zabap_toc_description,
       gather_transports IMPORTING tranports TYPE tt_range_of_transport OPTIONAL owners TYPE tt_range_of_owner OPTIONAL
                         descriptions TYPE tt_range_of_description OPTIONAL
@@ -53,10 +54,11 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       END OF c_status_color.
 
     DATA:
-      alv_table   TYPE REF TO cl_salv_table,
-      toc_manager TYPE REF TO zcl_zabap_toc,
-      layout_key  TYPE salv_s_layout_key,
-      report_data TYPE tt_report.
+      alv_table            TYPE REF TO cl_salv_table,
+      toc_manager          TYPE REF TO zcl_zabap_toc,
+      layout_key           TYPE salv_s_layout_key,
+      report_data          TYPE tt_report,
+      max_wait_time_in_sec TYPE i.
 
     METHODS:
       set_column_hotspot_icon IMPORTING column TYPE lvc_fname,
@@ -206,7 +208,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
                                                         source_description = CONV #( selected->description ) ).
             toc_manager->release( selected->toc_number ).
-            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system ) ).
+            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system max_wait_time_in_sec = max_wait_time_in_sec ) ).
             selected->toc_status = TEXT-s03.
             selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
             set_status_color( row = row color = COND #( WHEN rc = 0 THEN c_status_color-green
@@ -284,5 +286,8 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD set_max_wait_time.
+    me->max_wait_time_in_sec = seconds.
+  ENDMETHOD.
 
 ENDCLASS.

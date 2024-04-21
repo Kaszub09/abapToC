@@ -24,8 +24,12 @@ PARAMETERS p_descus RADIOBUTTON GROUP desc.
 SELECTION-SCREEN END OF BLOCK b02.
 
 SELECTION-SCREEN BEGIN OF BLOCK b03 WITH FRAME TITLE TEXT-b03.
-PARAMETERS p_layout TYPE disvariant-variant.
+PARAMETERS p_maxwai TYPE i DEFAULT '30'.
 SELECTION-SCREEN END OF BLOCK b03.
+
+SELECTION-SCREEN BEGIN OF BLOCK b04 WITH FRAME TITLE TEXT-b04.
+PARAMETERS p_layout TYPE disvariant-variant.
+SELECTION-SCREEN END OF BLOCK b04.
 
 " -----------------------------------------------------------------------
 
@@ -35,6 +39,7 @@ INITIALIZATION.
   " -----------------------------------------------------------------------
 
 START-OF-SELECTION.
+  report->set_max_wait_time( p_maxwai ).
   report->set_toc_description( toc_description = NEW #( COND #( WHEN p_destoc = abap_true THEN zcl_zabap_toc_description=>c_toc_description-toc
       WHEN p_desori = abap_true THEN zcl_zabap_toc_description=>c_toc_description-original
       WHEN p_descus = abap_true THEN zcl_zabap_toc_description=>c_toc_description-custom ) ) ).
