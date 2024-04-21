@@ -2234,6 +2234,12 @@
       </item>
       <item>
        <ID>S</ID>
+       <KEY>P_MAXWAI</KEY>
+       <ENTRY>Czas (s) oczekiwania na ToC</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
        <KEY>P_RELTR</KEY>
        <ENTRY>Pokaż zwolnione transporty</ENTRY>
        <LENGTH>38</LENGTH>
