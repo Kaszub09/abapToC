@@ -208,7 +208,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
                                                         source_description = CONV #( selected->description ) ).
             toc_manager->release( selected->toc_number ).
-            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system ) ).
+            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system max_wait_time_in_sec = max_wait_time_in_sec ) ).
             selected->toc_status = TEXT-s03.
             selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
             set_status_color( row = row color = COND #( WHEN rc = 0 THEN c_status_color-green
