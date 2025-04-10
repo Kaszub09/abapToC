@@ -1,9 +1,10 @@
 FUNCTION zabap_toc_unpack.
 *"----------------------------------------------------------------------
-*"*"Lokalny interfejs:
+*"*"Local Interface:
 *"  IMPORTING
 *"     VALUE(TOC) TYPE  TRKORR
 *"     VALUE(TARGET_SYSTEM) TYPE  TR_TARGET
+*"     VALUE(IGNORE_VERSION) TYPE  CHAR1
 *"  EXPORTING
 *"     VALUE(ERROR) TYPE  STRING
 *"     VALUE(RET_CODE) TYPE  TRRETCODE
@@ -34,6 +35,7 @@ FUNCTION zabap_toc_unpack.
           iv_system                  = system
           iv_request                 = toc
           iv_client                  = client
+          iv_ignore_cvers            = ignore_version
         IMPORTING
           ev_tp_ret_code             = ret_code
         EXCEPTIONS

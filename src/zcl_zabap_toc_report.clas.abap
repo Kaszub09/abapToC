@@ -7,7 +7,10 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       tt_range_of_description TYPE RANGE OF as4text.
 
     METHODS:
-      constructor IMPORTING report_id TYPE sy-repid,
+      constructor
+        IMPORTING
+            report_id TYPE sy-repid
+            ignore_version type abap_bool,
       set_max_wait_time IMPORTING seconds TYPE i,
       set_toc_description IMPORTING toc_description TYPE REF TO zcl_zabap_toc_description,
       gather_transports IMPORTING tranports TYPE tt_range_of_transport OPTIONAL owners TYPE tt_range_of_owner OPTIONAL
@@ -17,6 +20,7 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       display IMPORTING layout_name TYPE slis_vari OPTIONAL,
       get_layout_from_f4_selection RETURNING VALUE(layout) TYPE slis_vari.
 
+protected section.
   PRIVATE SECTION.
     TYPES:
       t_icon TYPE c LENGTH 4,
@@ -59,6 +63,7 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       layout_key           TYPE salv_s_layout_key,
       report_data          TYPE tt_report,
       max_wait_time_in_sec TYPE i.
+    data ignore_version type abap_bool.
 
     METHODS:
       set_column_hotspot_icon IMPORTING column TYPE lvc_fname,
@@ -70,18 +75,26 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row column,
       on_added_function FOR EVENT added_function OF cl_salv_events IMPORTING e_salv_function ,
       show_transport_details IMPORTING transport TYPE trkorr.
+
 ENDCLASS.
 
 
-CLASS zcl_zabap_toc_report IMPLEMENTATION.
+
+CLASS ZCL_ZABAP_TOC_REPORT IMPLEMENTATION.
+
+
   METHOD constructor.
+    me->ignore_version = ignore_version.
     layout_key = VALUE salv_s_layout_key( report = report_id ).
     toc_manager = NEW #( NEW zcl_zabap_toc_description( zcl_zabap_toc_description=>c_toc_description-toc ) ).
   ENDMETHOD.
 
-  METHOD set_toc_description.
-    toc_manager = NEW #( toc_description ).
+
+  METHOD display.
+    prepare_alv_table( layout_name ).
+    alv_table->display( ).
   ENDMETHOD.
+
 
   METHOD gather_transports.
     SELECT FROM e070
@@ -101,37 +114,109 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DELETE ADJACENT DUPLICATES FROM report_data COMPARING transport.
   ENDMETHOD.
 
+
   METHOD get_layout_from_f4_selection.
     layout = cl_salv_layout_service=>f4_layouts( s_key = layout_key restrict = if_salv_c_layout=>restrict_none )-layout.
   ENDMETHOD.
 
-  METHOD display.
-    prepare_alv_table( layout_name ).
-    alv_table->display( ).
+
+  METHOD on_added_function.
+    DATA selected_row TYPE REF TO i.
+
+    CASE e_salv_function.
+      WHEN 'TOC_C'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_toc ) ).
+        ENDLOOP.
+
+      WHEN 'TOC_CR'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_toc ) ).
+        ENDLOOP.
+
+      WHEN 'TOC_CRI'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_import_toc ) ).
+        ENDLOOP.
+
+      WHEN 'STMS'.
+        CALL TRANSACTION 'STMS'.
+
+      WHEN OTHERS.
+
+    ENDCASE.
   ENDMETHOD.
 
-  METHOD set_column_hotspot_icon.
-    DATA(col) = CAST cl_salv_column_table( me->alv_table->get_columns( )->get_column( column ) ).
-    col->set_icon( if_salv_c_bool_sap=>true ).
-    col->set_cell_type( if_salv_c_cell_type=>hotspot ).
+
+  METHOD on_double_click.
+    DATA(selected) = REF #( report_data[ row ] ).
+
+    CASE column.
+      WHEN 'TRANSPORT'.
+        show_transport_details( selected->transport ).
+
+      WHEN OTHERS.
+
+    ENDCASE.
   ENDMETHOD.
 
-  METHOD set_fixed_column_text.
-    DATA(col) = alv_table->get_columns( )->get_column( column ).
-    IF strlen( text ) > 20.
-      col->set_long_text( text ).
-      col->set_fixed_header_text( 'L' ).
-    ELSEIF strlen( text ) > 10.
-      col->set_long_text( text ).
-      col->set_medium_text( CONV #( text ) ).
-      col->set_fixed_header_text( 'M' ).
-    ELSE.
-      col->set_long_text( text ).
-      col->set_medium_text( CONV #( text ) ).
-      col->set_short_text( CONV #( text ) ).
-      col->set_fixed_header_text( 'S' ).
-    ENDIF.
+
+  METHOD on_link_click.
+    DATA(selected) = REF #( report_data[ row ] ).
+    CLEAR selected->color.
+
+    TRY.
+        CASE column.
+            "--------------------------------------------------
+          WHEN c_toc_columns-create_toc.
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+                                                        source_description = CONV #( selected->description ) ).
+            selected->toc_status = TEXT-s01.
+            set_status_color( row = row color = c_status_color-green ).
+
+            "--------------------------------------------------
+          WHEN c_toc_columns-create_release_toc.
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+                                                        source_description = CONV #( selected->description ) ).
+            toc_manager->release( selected->toc_number ).
+            selected->toc_status = TEXT-s02.
+            set_status_color( row = row color = c_status_color-green ).
+
+            "--------------------------------------------------
+          WHEN c_toc_columns-create_release_import_toc.
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+                                                        source_description = CONV #( selected->description ) ).
+            toc_manager->release( selected->toc_number ).
+            DATA(rc) =
+              CONV i(
+                toc_manager->import(
+                  toc = selected->toc_number
+                  target_system = selected->target_system
+                  max_wait_time_in_sec = max_wait_time_in_sec
+                  ignore_version = ignore_version ) ).
+            selected->toc_status = TEXT-s03.
+            selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
+            set_status_color( row = row color = COND #( WHEN rc = 0 THEN c_status_color-green
+                                                        WHEN rc = 4 THEN c_status_color-yellow
+                                                        ELSE             c_status_color-red ) ).
+
+            "--------------------------------------------------
+          WHEN OTHERS.
+        ENDCASE.
+
+      CATCH zcx_zabap_exception INTO DATA(exception).
+        selected->toc_status = exception->get_text( ).
+        set_status_color( row = row color = c_status_color-red ).
+
+      CATCH zcx_zabap_user_cancel INTO DATA(user_canceled).
+        selected->toc_status = TEXT-e01.
+        set_status_color( row = row color = c_status_color-red ).
+
+    ENDTRY.
+
+    alv_table->refresh( refresh_mode = if_salv_c_refresh=>full ).
   ENDMETHOD.
+
 
   METHOD prepare_alv_table.
     cl_salv_table=>factory( IMPORTING r_salv_table = alv_table CHANGING  t_table = report_data ).
@@ -173,105 +258,54 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     alv_table->set_screen_status( report = 'ZTOC' pfstatus = 'MAIN' ).
   ENDMETHOD.
 
-  METHOD set_status_color.
-    DATA(color_cell) = REF #( report_data[ row ]-color ).
-    CLEAR color_cell->*.
-    APPEND VALUE #( fname = 'TOC_STATUS' color = VALUE #( col = color ) ) TO color_cell->*.
+
+  METHOD set_column_hotspot_icon.
+    DATA(col) = CAST cl_salv_column_table( me->alv_table->get_columns( )->get_column( column ) ).
+    col->set_icon( if_salv_c_bool_sap=>true ).
+    col->set_cell_type( if_salv_c_cell_type=>hotspot ).
   ENDMETHOD.
+
 
   METHOD set_entry_color.
     CLEAR entry->color.
     APPEND VALUE #( fname = 'TOC_STATUS' color = VALUE #( col = color ) ) TO entry->color.
   ENDMETHOD.
 
-  METHOD on_link_click.
-    DATA(selected) = REF #( report_data[ row ] ).
-    CLEAR selected->color.
 
-    TRY.
-        CASE column.
-            "--------------------------------------------------
-          WHEN c_toc_columns-create_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
-                                                        source_description = CONV #( selected->description ) ).
-            selected->toc_status = TEXT-s01.
-            set_status_color( row = row color = c_status_color-green ).
-
-            "--------------------------------------------------
-          WHEN c_toc_columns-create_release_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
-                                                        source_description = CONV #( selected->description ) ).
-            toc_manager->release( selected->toc_number ).
-            selected->toc_status = TEXT-s02.
-            set_status_color( row = row color = c_status_color-green ).
-
-            "--------------------------------------------------
-          WHEN c_toc_columns-create_release_import_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
-                                                        source_description = CONV #( selected->description ) ).
-            toc_manager->release( selected->toc_number ).
-            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system max_wait_time_in_sec = max_wait_time_in_sec ) ).
-            selected->toc_status = TEXT-s03.
-            selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
-            set_status_color( row = row color = COND #( WHEN rc = 0 THEN c_status_color-green
-                                                        WHEN rc = 4 THEN c_status_color-yellow
-                                                        ELSE             c_status_color-red ) ).
-
-            "--------------------------------------------------
-          WHEN OTHERS.
-        ENDCASE.
-
-      CATCH zcx_zabap_exception INTO DATA(exception).
-        selected->toc_status = exception->get_text( ).
-        set_status_color( row = row color = c_status_color-red ).
-
-      CATCH zcx_zabap_user_cancel INTO DATA(user_canceled).
-        selected->toc_status = TEXT-e01.
-        set_status_color( row = row color = c_status_color-red ).
-
-    ENDTRY.
-
-    alv_table->refresh( refresh_mode = if_salv_c_refresh=>full ).
+  METHOD set_fixed_column_text.
+    DATA(col) = alv_table->get_columns( )->get_column( column ).
+    IF strlen( text ) > 20.
+      col->set_long_text( text ).
+      col->set_fixed_header_text( 'L' ).
+    ELSEIF strlen( text ) > 10.
+      col->set_long_text( text ).
+      col->set_medium_text( CONV #( text ) ).
+      col->set_fixed_header_text( 'M' ).
+    ELSE.
+      col->set_long_text( text ).
+      col->set_medium_text( CONV #( text ) ).
+      col->set_short_text( CONV #( text ) ).
+      col->set_fixed_header_text( 'S' ).
+    ENDIF.
   ENDMETHOD.
 
-  METHOD on_double_click.
-    DATA(selected) = REF #( report_data[ row ] ).
 
-    CASE column.
-      WHEN 'TRANSPORT'.
-        show_transport_details( selected->transport ).
-
-      WHEN OTHERS.
-
-    ENDCASE.
+  METHOD set_max_wait_time.
+    me->max_wait_time_in_sec = seconds.
   ENDMETHOD.
 
-  METHOD on_added_function.
-    DATA selected_row TYPE REF TO i.
 
-    CASE e_salv_function.
-      WHEN 'TOC_C'.
-        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
-          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_toc ) ).
-        ENDLOOP.
-
-      WHEN 'TOC_CR'.
-        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
-          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_toc ) ).
-        ENDLOOP.
-
-      WHEN 'TOC_CRI'.
-        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
-          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_import_toc ) ).
-        ENDLOOP.
-
-      WHEN 'STMS'.
-        CALL TRANSACTION 'STMS'.
-
-      WHEN OTHERS.
-
-    ENDCASE.
+  METHOD set_status_color.
+    DATA(color_cell) = REF #( report_data[ row ]-color ).
+    CLEAR color_cell->*.
+    APPEND VALUE #( fname = 'TOC_STATUS' color = VALUE #( col = color ) ) TO color_cell->*.
   ENDMETHOD.
+
+
+  METHOD set_toc_description.
+    toc_manager = NEW #( toc_description ).
+  ENDMETHOD.
+
 
   METHOD show_transport_details.
     DATA batch_input TYPE TABLE OF bdcdata.
@@ -286,10 +320,4 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DATA(call_options) = VALUE ctu_params( dismode = 'E' updmode  = 'A' nobinpt = abap_true nobiend = abap_true ).
     CALL TRANSACTION 'SE01' USING batch_input OPTIONS FROM call_options.
   ENDMETHOD.
-
-
-  METHOD set_max_wait_time.
-    me->max_wait_time_in_sec = seconds.
-  ENDMETHOD.
-
 ENDCLASS.

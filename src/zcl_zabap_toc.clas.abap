@@ -11,10 +11,12 @@ CLASS zcl_zabap_toc DEFINITION
              RAISING zcx_zabap_exception zcx_zabap_user_cancel,
       release IMPORTING toc TYPE trkorr RAISING zcx_zabap_exception,
       import IMPORTING toc TYPE trkorr target_system TYPE tr_target max_wait_time_in_sec TYPE i DEFAULT 30
+                       ignore_version type abap_bool default abap_true
              RETURNING VALUE(ret_code) TYPE trretcode RAISING zcx_zabap_exception,
       import_objects IMPORTING source_transport TYPE trkorr destination_transport TYPE trkorr RAISING zcx_zabap_exception,
       check_status_in_system IMPORTING toc TYPE trkorr system TYPE tr_target EXPORTING imported TYPE abap_bool rc TYPE i RAISING zcx_zabap_exception.
 
+protected section.
   PRIVATE SECTION.
     CONSTANTS c_toc_doesnt_exists_retcode TYPE trretcode VALUE '0152'.
     CONSTANTS c_transport_type_toc TYPE trfunction VALUE 'T'.
@@ -22,10 +24,9 @@ CLASS zcl_zabap_toc DEFINITION
 ENDCLASS.
 
 
-CLASS zcl_zabap_toc IMPLEMENTATION.
-  METHOD constructor.
-    me->toc_description = toc_description.
-  ENDMETHOD.
+
+CLASS ZCL_ZABAP_TOC IMPLEMENTATION.
+
 
   METHOD check_status_in_system.
     DATA:
@@ -49,6 +50,12 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
     rc = cofiles-rc.
   ENDMETHOD.
 
+
+  METHOD constructor.
+    me->toc_description = toc_description.
+  ENDMETHOD.
+
+
   METHOD create.
     TRY.
         cl_adt_cts_management=>create_empty_request( EXPORTING iv_type = 'T'
@@ -65,6 +72,7 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
+
   METHOD import.
     DATA error TYPE string.
     GET TIME. "Update sy-uzeit before calculating wait_until
@@ -76,6 +84,7 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
         EXPORTING
           toc           = toc
           target_system = target_system
+          ignore_version = ignore_version
         IMPORTING
           ret_code      = ret_code
           error         = error.
@@ -89,6 +98,7 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
           message = replace( val = TEXT-e03 sub = '&1' with = error ).
     ENDIF.
   ENDMETHOD.
+
 
   METHOD import_objects.
     DATA request_headers TYPE trwbo_request_headers.
@@ -136,6 +146,7 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD release.
     TRY.
