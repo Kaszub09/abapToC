@@ -20,6 +20,10 @@
        <PARAMETER>TARGET_SYSTEM</PARAMETER>
        <TYP>TR_TARGET</TYP>
       </RSIMP>
+      <RSIMP>
+       <PARAMETER>IGNORE_VERSION</PARAMETER>
+       <TYP>CHAR1</TYP>
+      </RSIMP>
      </IMPORT>
      <EXPORT>
       <RSEXP>
@@ -38,6 +42,10 @@
       </RSFDO>
       <RSFDO>
        <PARAMETER>TARGET_SYSTEM</PARAMETER>
+       <KIND>P</KIND>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IGNORE_VERSION</PARAMETER>
        <KIND>P</KIND>
       </RSFDO>
       <RSFDO>

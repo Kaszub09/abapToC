@@ -44,6 +44,18 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>C06</KEY>
+     <ENTRY>Main transport</ENTRY>
+     <LENGTH>24</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>C07</KEY>
+     <ENTRY>Rel.</ENTRY>
+     <LENGTH>14</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>E01</KEY>
      <ENTRY>Cancelled</ENTRY>
      <LENGTH>19</LENGTH>
