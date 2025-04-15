@@ -17,7 +17,7 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
                         descriptions TYPE tt_range_of_description OPTIONAL
                         include_released TYPE abap_bool DEFAULT abap_true include_tocs TYPE abap_bool DEFAULT abap_false
                         include_subtransports TYPE abap_bool DEFAULT abap_false,
-      display IMPORTING layout_name TYPE slis_vari OPTIONAL RAISING cx_salv_error,
+      display IMPORTING layout_name TYPE slis_vari OPTIONAL,
       get_layout_from_f4_selection RETURNING VALUE(layout) TYPE slis_vari.
 
   PROTECTED SECTION.
