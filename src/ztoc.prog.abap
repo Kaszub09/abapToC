@@ -49,11 +49,7 @@ START-OF-SELECTION.
       WHEN p_descus = abap_true THEN zcl_zabap_toc_description=>c_toc_description-custom ) ) ).
   report->gather_transports( tranports = so_trnum[] owners = so_owner[] descriptions = so_descr[]
                              include_released = p_reltr include_tocs = p_tocs include_subtransports = p_sub ).
-  TRY.
-      report->display( p_layout ).
-    CATCH cx_salv_error INTO DATA(e).
-      MESSAGE e TYPE 'I' DISPLAY LIKE 'E'.
-  ENDTRY.
+  report->display( p_layout ).
 
   " -----------------------------------------------------------------------
 
