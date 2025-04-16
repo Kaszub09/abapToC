@@ -25,7 +25,7 @@ SELECTION-SCREEN END OF BLOCK b02.
 
 SELECTION-SCREEN BEGIN OF BLOCK b03 WITH FRAME TITLE TEXT-b03.
 PARAMETERS p_maxwai TYPE i DEFAULT '30'.
-parameters vignore AS CHECKBOX default abap_true.
+PARAMETERS vignore AS CHECKBOX DEFAULT abap_true.
 " -----------------------------------------------------------------------
 SELECTION-SCREEN END OF BLOCK b03.
 
