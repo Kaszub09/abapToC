@@ -145,7 +145,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
         ENDLOOP.
 
       WHEN 'STMS'.
-        CALL TRANSACTION 'STMS'.
+        CALL TRANSACTION 'STMS' WITH AUTHORITY-CHECK.
 
       WHEN OTHERS.
 
@@ -331,7 +331,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD show_transport_details.
-    DATA batch_input TYPE TABLE OF bdcdata WITH EMPTY KEY.
+    DATA batch_input TYPE STANDARD TABLE OF bdcdata WITH EMPTY KEY.
 
     APPEND VALUE #( program = 'RDDM0001' dynpro = '0200' dynbegin = 'X'  ) TO batch_input.
     APPEND VALUE #( fnam = 'BDC_OKCODE' fval = '=TSSN' ) TO batch_input.
