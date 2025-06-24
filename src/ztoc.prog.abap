@@ -9,9 +9,9 @@ REPORT ztoc.
 TABLES: e070, e07t.
 
 SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE TEXT-b01.
-SELECT-OPTIONS so_trnum FOR e070-trkorr. " Transport numbers
-SELECT-OPTIONS so_owner FOR e070-as4user DEFAULT sy-uname. " Transport owners
-SELECT-OPTIONS so_descr FOR e07t-as4text.
+SELECT-OPTIONS s_trnum FOR e070-trkorr. " Transport numbers
+SELECT-OPTIONS s_owner FOR e070-as4user DEFAULT sy-uname. " Transport owners
+SELECT-OPTIONS s_descr FOR e07t-as4text.
 PARAMETERS p_reltr AS CHECKBOX. " Include released transports
 PARAMETERS p_tocs AS CHECKBOX. " Include ToCs
 PARAMETERS p_sub AS CHECKBOX. " Include subtransports
@@ -44,7 +44,7 @@ START-OF-SELECTION.
   report->set_toc_description( toc_description = NEW #( COND #( WHEN p_destoc = abap_true THEN zcl_zabap_toc_description=>c_toc_description-toc
       WHEN p_desori = abap_true THEN zcl_zabap_toc_description=>c_toc_description-original
       WHEN p_descus = abap_true THEN zcl_zabap_toc_description=>c_toc_description-custom ) ) ).
-  report->gather_transports( tranports = so_trnum[] owners = so_owner[] descriptions = so_descr[]
+  report->gather_transports( tranports = s_trnum[] owners = s_owner[] descriptions = s_descr[]
                              include_released = p_reltr include_tocs = p_tocs include_subtransports = p_sub ).
   report->display( p_layout ).
 

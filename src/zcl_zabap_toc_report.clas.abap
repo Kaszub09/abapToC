@@ -331,7 +331,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD show_transport_details.
-    DATA batch_input TYPE TABLE OF bdcdata.
+    DATA batch_input TYPE TABLE OF bdcdata WITH EMPTY KEY.
 
     APPEND VALUE #( program = 'RDDM0001' dynpro = '0200' dynbegin = 'X'  ) TO batch_input.
     APPEND VALUE #( fnam = 'BDC_OKCODE' fval = '=TSSN' ) TO batch_input.
@@ -341,6 +341,6 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     APPEND VALUE #( fnam = 'TRDYSE01SN-TR_TRKORR' fval = transport ) TO batch_input.
 
     DATA(call_options) = VALUE ctu_params( dismode = 'E' updmode  = 'A' nobinpt = abap_true nobiend = abap_true ).
-    CALL TRANSACTION 'SE01' USING batch_input OPTIONS FROM call_options.
+    CALL TRANSACTION 'SE01' WITH AUTHORITY-CHECK USING batch_input OPTIONS FROM call_options.
   ENDMETHOD.
 ENDCLASS.
