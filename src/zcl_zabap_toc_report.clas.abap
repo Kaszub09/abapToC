@@ -1,288 +1,253 @@
-class zcl_zabap_toc_report definition public final create public.
+CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
 
-  public section.
-    types:
-      tt_range_of_transport   type range of trkorr,
-      tt_range_of_owner       type range of tr_as4user,
-      tt_range_of_description type range of as4text.
+  PUBLIC SECTION.
+    TYPES:
+      tt_range_of_transport   TYPE RANGE OF trkorr,
+      tt_range_of_owner       TYPE RANGE OF tr_as4user,
+      tt_range_of_description TYPE RANGE OF as4text.
 
-    methods:
-      constructor
-        importing
-            report_id type sy-repid
-            ignore_version type abap_bool,
-      set_max_wait_time importing seconds type i,
-      set_toc_description importing toc_description type ref to zcl_zabap_toc_description,
-      gather_transports importing tranports type tt_range_of_transport optional owners type tt_range_of_owner optional
-                        descriptions type tt_range_of_description optional
-                        include_released type abap_bool default abap_true include_tocs type abap_bool default abap_false
-                        include_subtransports type abap_bool default abap_false,
-      display importing layout_name type slis_vari optional,
-      get_layout_from_f4_selection returning value(layout) type slis_vari.
+    METHODS:
+      constructor IMPORTING report_id TYPE sy-repid ignore_version TYPE abap_bool,
+      set_max_wait_time IMPORTING seconds TYPE i,
+      set_toc_description IMPORTING toc_description TYPE REF TO zcl_zabap_toc_description,
+      gather_transports IMPORTING tranports TYPE tt_range_of_transport OPTIONAL owners TYPE tt_range_of_owner OPTIONAL
+                        descriptions TYPE tt_range_of_description OPTIONAL
+                        include_released TYPE abap_bool DEFAULT abap_true include_tocs TYPE abap_bool DEFAULT abap_false
+                        include_subtransports TYPE abap_bool DEFAULT abap_false,
+      display IMPORTING layout_name TYPE slis_vari OPTIONAL,
+      get_layout_from_f4_selection RETURNING VALUE(layout) TYPE slis_vari.
 
-  protected section.
-  private section.
-    types:
-      t_icon type c length 4,
-      begin of t_report,
-        released                  type t_icon,
-        main_transport            type trkorr,
-        transport                 type trkorr,
-        type                      type trfunction,
-        target_system             type tr_target,
-        owner                     type tr_as4user,
-        creation_date             type as4date,
-        description               type as4text,
-        create_toc                type t_icon,
-        create_release_toc        type t_icon,
-        create_release_import_toc type t_icon,
-        toc_number                type trkorr,
-        toc_status                type string,
-        create_date_main          type as4date,
-        color                     type lvc_t_scol,
-      end of t_report,
-      tt_report type standard table of t_report with key transport with non-unique sorted key toc components toc_number.
+  PRIVATE SECTION.
+    TYPES:
+      t_icon TYPE c LENGTH 4,
+      BEGIN OF t_report,
+        released                  TYPE t_icon,
+        main_transport            TYPE trkorr,
+        transport                 TYPE trkorr,
+        type                      TYPE trfunction,
+        target_system             TYPE tr_target,
+        owner                     TYPE tr_as4user,
+        creation_date             TYPE as4date,
+        description               TYPE as4text,
+        create_toc                TYPE t_icon,
+        create_release_toc        TYPE t_icon,
+        create_release_import_toc TYPE t_icon,
+        toc_number                TYPE trkorr,
+        toc_status                TYPE string,
+        create_date_main          TYPE as4date,
+        color                     TYPE lvc_t_scol,
+      END OF t_report,
+      tt_report TYPE STANDARD TABLE OF t_report WITH KEY transport WITH NON-UNIQUE SORTED KEY toc COMPONENTS toc_number.
 
-    constants:
-      begin of c_icon,
-        create                type t_icon value '@EZ@',
-        create_release        type t_icon value '@4A@',
-        create_release_import type t_icon value '@K5@',
-      end of c_icon,
-      begin of c_toc_columns,
-        create_toc                type string value 'CREATE_TOC',
-        create_release_toc        type string value 'CREATE_RELEASE_TOC',
-        create_release_import_toc type string value 'CREATE_RELEASE_IMPORT_TOC',
-        transport                 type string value 'TRANSPORT',
-        main_transport            type string value 'MAIN_TRANSPORT',
-        released                  type string value 'RELEASED',
-        creation_date             type string value 'CREATION_DATE',
-        create_date_main          type string value 'CREATE_DATE_MAIN',
-        toc_number                type string value 'TOC_NUMBER',
-        type                      type string value 'TYPE',
-      end of c_toc_columns,
-      begin of c_status_color,
-        green  type i value 5,
-        yellow type i value 3,
-        red    type i value 6,
-      end of c_status_color.
+    CONSTANTS:
+      BEGIN OF c_icon,
+        create                TYPE t_icon VALUE '@EZ@',
+        create_release        TYPE t_icon VALUE '@4A@',
+        create_release_import TYPE t_icon VALUE '@K5@',
+      END OF c_icon,
+      BEGIN OF c_toc_columns,
+        create_toc                TYPE string VALUE 'CREATE_TOC',
+        create_release_toc        TYPE string VALUE 'CREATE_RELEASE_TOC',
+        create_release_import_toc TYPE string VALUE 'CREATE_RELEASE_IMPORT_TOC',
+        transport                 TYPE string VALUE 'TRANSPORT',
+        main_transport            TYPE string VALUE 'MAIN_TRANSPORT',
+        released                  TYPE string VALUE 'RELEASED',
+        creation_date             TYPE string VALUE 'CREATION_DATE',
+        create_date_main          TYPE string VALUE 'CREATE_DATE_MAIN',
+        toc_number                TYPE string VALUE 'TOC_NUMBER',
+        type                      TYPE string VALUE 'TYPE',
+      END OF c_toc_columns,
+      BEGIN OF c_status_color,
+        green  TYPE i VALUE 5,
+        yellow TYPE i VALUE 3,
+        red    TYPE i VALUE 6,
+      END OF c_status_color.
 
-    data:
-      alv_table            type ref to cl_salv_table,
-      toc_manager          type ref to zcl_zabap_toc,
-      layout_key           type salv_s_layout_key,
-      report_data          type tt_report,
-      max_wait_time_in_sec type i.
-    data ignore_version type abap_bool.
-    data include_subtransports type abap_bool.
+    DATA:
+      alv_table             TYPE REF TO cl_salv_table,
+      toc_manager           TYPE REF TO zcl_zabap_toc,
+      layout_key            TYPE salv_s_layout_key,
+      report_data           TYPE tt_report,
+      max_wait_time_in_sec  TYPE i,
+      ignore_version        TYPE abap_bool,
+      include_subtransports TYPE abap_bool.
 
-    methods:
-      set_column_hotspot_icon importing column type lvc_fname raising cx_salv_error,
-      set_fixed_column_text   importing column type lvc_fname text type scrtext_l,
-      set_status_color importing row type i color type i,
-      set_entry_color importing entry type ref to t_report color type i,
-      prepare_alv_table importing layout_name type slis_vari,
-      on_link_click for event link_click of cl_salv_events_table importing row column,
-      on_double_click for event double_click of cl_salv_events_table importing row column,
-      on_added_function for event added_function of cl_salv_events importing e_salv_function ,
-      show_transport_details importing transport type trkorr,
+    METHODS:
+      set_column_hotspot_icon IMPORTING column TYPE lvc_fname RAISING cx_salv_error,
+      set_fixed_column_text   IMPORTING column TYPE lvc_fname text TYPE scrtext_l,
+      set_status_color IMPORTING row TYPE i color TYPE i,
+      set_entry_color IMPORTING entry TYPE REF TO t_report color TYPE i,
+      prepare_alv_table IMPORTING layout_name TYPE slis_vari,
+      on_link_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row column,
+      on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row column,
+      on_added_function FOR EVENT added_function OF cl_salv_events IMPORTING e_salv_function,
+      show_transport_details IMPORTING transport TYPE trkorr,
       setup_sorts,
       hide_main_transport.
+ENDCLASS.
 
-endclass.
-
-
-
-class zcl_zabap_toc_report implementation.
-
-
-  method constructor.
+CLASS zcl_zabap_toc_report IMPLEMENTATION.
+  METHOD constructor.
     me->ignore_version = ignore_version.
-    layout_key = value salv_s_layout_key( report = report_id ).
-    toc_manager = new #( new zcl_zabap_toc_description( zcl_zabap_toc_description=>c_toc_description-toc ) ).
-  endmethod.
+    layout_key = VALUE salv_s_layout_key( report = report_id ).
+    toc_manager = NEW #( NEW zcl_zabap_toc_description( zcl_zabap_toc_description=>c_toc_description-toc ) ).
+  ENDMETHOD.
 
-
-  method display.
+  METHOD display.
     prepare_alv_table( layout_name ).
     alv_table->display( ).
-  endmethod.
+  ENDMETHOD.
 
-
-  method gather_transports.
+  METHOD gather_transports.
     me->include_subtransports = include_subtransports.
-    select from e070
-                left join e07t on e07t~trkorr = e070~trkorr
-                left join e070 as sup on sup~trkorr = e070~strkorr
-      fields
-        case
-          when e070~trstatus = 'L' or e070~trstatus = 'D'  then @icon_status_open
-          else @icon_status_booked
-        end as released,
-        case
-          when sup~trkorr is null then e070~trkorr
-          else sup~trkorr
-        end as main_transport,
-        e070~trkorr as transport, e070~trfunction as type, e070~as4user as owner, e070~as4date as creation_date,
-        case when e070~tarsystem <> @space then e070~tarsystem else sup~tarsystem end as target_system,
-        e07t~as4text as description,
-        @c_icon-create as create_toc, @c_icon-create_release as create_release_toc, @c_icon-create_release_import as create_release_import_toc,
-        case
-          when sup~trkorr is null then e070~as4date
-          else sup~as4date
-        end as create_date_main
-      where e070~trkorr in @tranports and e070~as4user in @owners and as4text in @descriptions
-        and ( @include_subtransports = @abap_true or e070~strkorr     = @space )
-        and ( @include_released      = @abap_true or e070~trstatus   in ( 'L', 'D' ) or sup~trstatus in ( 'L', 'D' ) )
-        and ( @include_tocs          = @abap_true or e070~trfunction <> 'T' )
-      order by e070~trkorr descending, e070~as4date descending
-      into corresponding fields of table @report_data.
+    SELECT FROM e070
+                LEFT JOIN e07t ON e07t~trkorr = e070~trkorr
+                LEFT JOIN e070 AS sup ON sup~trkorr = e070~strkorr
+      FIELDS
+        CASE WHEN e070~trstatus = 'L' OR e070~trstatus = 'D' THEN @icon_status_open ELSE @icon_status_booked END AS released,
+        CASE WHEN sup~trkorr IS NULL THEN e070~trkorr ELSE sup~trkorr END AS main_transport,
+        e070~trkorr AS transport, e070~trfunction AS type, e070~as4user AS owner, e070~as4date AS creation_date,
+        CASE WHEN e070~tarsystem <> @space THEN e070~tarsystem ELSE sup~tarsystem END AS target_system,
+        e07t~as4text AS description,
+        @c_icon-create AS create_toc, @c_icon-create_release AS create_release_toc, @c_icon-create_release_import AS create_release_import_toc,
+        CASE WHEN sup~trkorr IS NULL THEN e070~as4date ELSE sup~as4date END AS create_date_main
+      WHERE e070~trkorr IN @tranports AND e070~as4user IN @owners AND as4text IN @descriptions
+        AND ( @include_subtransports = @abap_true OR e070~strkorr = @space )
+        AND ( @include_released = @abap_true OR e070~trstatus IN ( 'L', 'D' ) OR sup~trstatus IN ( 'L', 'D' ) )
+        AND ( @include_tocs = @abap_true OR e070~trfunction <> 'T' )
+      ORDER BY e070~trkorr DESCENDING, e070~as4date DESCENDING
+      INTO CORRESPONDING FIELDS OF TABLE @report_data.
 
+    DELETE ADJACENT DUPLICATES FROM report_data COMPARING transport.
+  ENDMETHOD.
 
-    delete adjacent duplicates from report_data comparing transport.
-
-
-  endmethod.
-
-
-
-
-  method get_layout_from_f4_selection.
+  METHOD get_layout_from_f4_selection.
     layout = cl_salv_layout_service=>f4_layouts( s_key = layout_key restrict = if_salv_c_layout=>restrict_none )-layout.
-  endmethod.
+  ENDMETHOD.
 
+  METHOD on_added_function.
+    DATA selected_row TYPE REF TO i.
 
-  method on_added_function.
-    data selected_row type ref to i.
+    CASE e_salv_function.
+      WHEN 'TOC_C'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_toc ) ).
+        ENDLOOP.
 
-    case e_salv_function.
-      when 'TOC_C'.
-        loop at alv_table->get_selections( )->get_selected_rows( ) reference into selected_row.
-          on_link_click( row = selected_row->* column = conv #( c_toc_columns-create_toc ) ).
-        endloop.
+      WHEN 'TOC_CR'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_toc ) ).
+        ENDLOOP.
 
-      when 'TOC_CR'.
-        loop at alv_table->get_selections( )->get_selected_rows( ) reference into selected_row.
-          on_link_click( row = selected_row->* column = conv #( c_toc_columns-create_release_toc ) ).
-        endloop.
+      WHEN 'TOC_CRI'.
+        LOOP AT alv_table->get_selections( )->get_selected_rows( ) REFERENCE INTO selected_row.
+          on_link_click( row = selected_row->* column = CONV #( c_toc_columns-create_release_import_toc ) ).
+        ENDLOOP.
 
-      when 'TOC_CRI'.
-        loop at alv_table->get_selections( )->get_selected_rows( ) reference into selected_row.
-          on_link_click( row = selected_row->* column = conv #( c_toc_columns-create_release_import_toc ) ).
-        endloop.
+      WHEN 'STMS'.
+        CALL TRANSACTION 'STMS'.
 
-      when 'STMS'.
-        call transaction 'STMS'.
+      WHEN OTHERS.
 
-      when others.
+    ENDCASE.
+  ENDMETHOD.
 
-    endcase.
-  endmethod.
+  METHOD on_double_click.
+    DATA(selected) = REF #( report_data[ row ] ).
 
-
-  method on_double_click.
-    data(selected) = ref #( report_data[ row ] ).
-
-    case column.
-      when c_toc_columns-transport.
+    CASE column.
+      WHEN c_toc_columns-transport.
         show_transport_details( selected->transport ).
-      when c_toc_columns-toc_number.
-        if selected->toc_number is not initial.
+      WHEN c_toc_columns-toc_number.
+        IF selected->toc_number IS NOT INITIAL.
           show_transport_details( selected->toc_number ).
-        endif.
-      when others.
+        ENDIF.
+      WHEN OTHERS.
 
-    endcase.
-  endmethod.
+    ENDCASE.
+  ENDMETHOD.
 
+  METHOD on_link_click.
+    DATA(selected) = REF #( report_data[ row ] ).
+    CLEAR selected->color.
 
-  method on_link_click.
-    data(selected) = ref #( report_data[ row ] ).
-    clear selected->color.
-
-    try.
-        case column.
+    TRY.
+        CASE column.
             "--------------------------------------------------
-          when c_toc_columns-create_toc.
+          WHEN c_toc_columns-create_toc.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
-                                                        source_description = conv #( selected->description ) ).
-            selected->toc_status = text-s01.
+                                                        source_description = CONV #( selected->description ) ).
+            selected->toc_status = TEXT-s01.
             set_status_color( row = row color = c_status_color-green ).
 
             "--------------------------------------------------
-          when c_toc_columns-create_release_toc.
+          WHEN c_toc_columns-create_release_toc.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
-                                                        source_description = conv #( selected->description ) ).
+                                                        source_description = CONV #( selected->description ) ).
             toc_manager->release( selected->toc_number ).
-            selected->toc_status = text-s02.
+            selected->toc_status = TEXT-s02.
             set_status_color( row = row color = c_status_color-green ).
 
             "--------------------------------------------------
-          when c_toc_columns-create_release_import_toc.
+          WHEN c_toc_columns-create_release_import_toc.
             selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
-                                                        source_description = conv #( selected->description ) ).
+                                                        source_description = CONV #( selected->description ) ).
             toc_manager->release( selected->toc_number ).
-            data(rc) =
-              conv i(
-                toc_manager->import(
-                  toc = selected->toc_number
-                  target_system = selected->target_system
-                  max_wait_time_in_sec = max_wait_time_in_sec
-                  ignore_version = ignore_version ) ).
-            selected->toc_status = text-s03.
-            selected->toc_status = replace( val = text-s04 sub = '&1' with = |{ rc }| ).
-            set_status_color( row = row color = cond #( when rc = 0 then c_status_color-green
-                                                        when rc = 4 then c_status_color-yellow
-                                                        else             c_status_color-red ) ).
+            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system
+                  max_wait_time_in_sec = max_wait_time_in_sec ignore_version = ignore_version ) ).
+            selected->toc_status = TEXT-s03.
+            selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
+            set_status_color( row = row color = COND #( WHEN rc = 0 THEN c_status_color-green
+                                                        WHEN rc = 4 THEN c_status_color-yellow
+                                                        ELSE             c_status_color-red ) ).
 
             "--------------------------------------------------
-          when others.
-        endcase.
+          WHEN OTHERS.
+        ENDCASE.
 
-      catch zcx_zabap_exception into data(exception).
+      CATCH zcx_zabap_exception INTO DATA(exception).
         selected->toc_status = exception->get_text( ).
         set_status_color( row = row color = c_status_color-red ).
 
-      catch zcx_zabap_user_cancel into data(user_canceled).
-        selected->toc_status = text-e01.
+      CATCH zcx_zabap_user_cancel INTO DATA(user_canceled). " TODO: variable is assigned but never used (ABAP cleaner)
+        selected->toc_status = TEXT-e01.
         set_status_color( row = row color = c_status_color-red ).
 
-    endtry.
+    ENDTRY.
 
     alv_table->refresh( refresh_mode = if_salv_c_refresh=>full ).
-  endmethod.
+  ENDMETHOD.
 
-
-  method prepare_alv_table.
-    cl_salv_table=>factory( importing r_salv_table = alv_table changing  t_table = report_data ).
+  METHOD prepare_alv_table.
+    cl_salv_table=>factory( IMPORTING r_salv_table = alv_table CHANGING  t_table = report_data ).
 
     " Set columns as icons
-    set_column_hotspot_icon( conv #( c_toc_columns-create_toc ) ).
-    set_column_hotspot_icon( conv #( c_toc_columns-create_release_toc ) ).
-    set_column_hotspot_icon( conv #( c_toc_columns-create_release_import_toc ) ).
+    set_column_hotspot_icon( CONV #( c_toc_columns-create_toc ) ).
+    set_column_hotspot_icon( CONV #( c_toc_columns-create_release_toc ) ).
+    set_column_hotspot_icon( CONV #( c_toc_columns-create_release_import_toc ) ).
 
     " Set column texts
-    set_fixed_column_text( column = conv #( c_toc_columns-create_toc ) text = conv #( text-c01 ) ).
-    set_fixed_column_text( column = conv #( c_toc_columns-create_release_toc ) text = conv #( text-c02 ) ).
-    set_fixed_column_text( column = conv #( c_toc_columns-create_release_import_toc ) text = conv #(  text-c03 ) ).
-    set_fixed_column_text( column = conv #( c_toc_columns-main_transport ) text = conv #(  text-c06 ) ).
-    set_fixed_column_text( column = conv #( c_toc_columns-released ) text = conv #(  text-c07 ) ).
-    set_fixed_column_text( column = 'TOC_NUMBER' text =  conv #( text-c04 ) ).
-    set_fixed_column_text( column = 'TOC_STATUS' text =  conv #( text-c05 ) ).
+    set_fixed_column_text( column = CONV #( c_toc_columns-create_toc ) text = CONV #( TEXT-c01 ) ).
+    set_fixed_column_text( column = CONV #( c_toc_columns-create_release_toc ) text = CONV #( TEXT-c02 ) ).
+    set_fixed_column_text( column = CONV #( c_toc_columns-create_release_import_toc ) text = CONV #(  TEXT-c03 ) ).
+    set_fixed_column_text( column = CONV #( c_toc_columns-main_transport ) text = CONV #(  TEXT-c06 ) ).
+    set_fixed_column_text( column = CONV #( c_toc_columns-released ) text = CONV #(  TEXT-c07 ) ).
+    set_fixed_column_text( column = 'TOC_NUMBER' text =  CONV #( TEXT-c04 ) ).
+    set_fixed_column_text( column = 'TOC_STATUS' text =  CONV #( TEXT-c05 ) ).
 
     " Set handlers
-    data(event) = alv_table->get_event( ).
-    set handler me->on_link_click for event.
-    set handler me->on_double_click for event.
-    set handler me->on_added_function for event.
+    DATA(event) = alv_table->get_event( ).
+    SET HANDLER me->on_link_click FOR event.
+    SET HANDLER me->on_double_click FOR event.
+    SET HANDLER me->on_added_function FOR event.
 
     " Set layouts
     alv_table->get_layout( )->set_key( layout_key ).
     alv_table->get_layout( )->set_save_restriction( if_salv_c_layout=>restrict_none ).
     alv_table->get_layout( )->set_default( abap_true ).
-    if layout_name is not initial.
+    IF layout_name IS NOT INITIAL.
       alv_table->get_layout( )->set_initial_layout( layout_name ).
-    endif.
+    ENDIF.
 
     " Enable standard report functions
     alv_table->get_functions( )->set_all( ).
@@ -290,22 +255,21 @@ class zcl_zabap_toc_report implementation.
     " Color
     alv_table->get_columns( )->set_color_column( 'COLOR' ).
 
-
     alv_table->get_selections( )->set_selection_mode( if_salv_c_selection_mode=>row_column ).
     alv_table->set_screen_status( report = 'ZTOC' pfstatus = 'MAIN' ).
 
     hide_main_transport( ).
 
     setup_sorts( ).
-  endmethod.
+  ENDMETHOD.
 
-  method hide_main_transport.
-    if include_subtransports = abap_false.
+  METHOD hide_main_transport.
+    IF include_subtransports = abap_false.
       alv_table->get_columns( )->get_column( |{ c_toc_columns-main_transport }| )->set_technical( ).
-    endif.
-  endmethod.
+    ENDIF.
+  ENDMETHOD.
 
-  method setup_sorts.
+  METHOD setup_sorts.
     alv_table->get_sorts( )->add_sort(
           columnname = |{ c_toc_columns-create_date_main }|
           position = 1
@@ -322,69 +286,61 @@ class zcl_zabap_toc_report implementation.
       columnname = |{ c_toc_columns-creation_date }|
       position = 4
       sequence = if_salv_c_sort=>sort_down ).
-  endmethod.
+  ENDMETHOD.
 
-
-  method set_column_hotspot_icon.
-    data(col) = cast cl_salv_column_table( me->alv_table->get_columns( )->get_column( column ) ).
+  METHOD set_column_hotspot_icon.
+    DATA(col) = CAST cl_salv_column_table( me->alv_table->get_columns( )->get_column( column ) ).
     col->set_icon( if_salv_c_bool_sap=>true ).
     col->set_cell_type( if_salv_c_cell_type=>hotspot ).
-  endmethod.
+  ENDMETHOD.
 
+  METHOD set_entry_color.
+    CLEAR entry->color.
+    APPEND VALUE #( fname = 'TOC_STATUS' color = VALUE #( col = color ) ) TO entry->color.
+  ENDMETHOD.
 
-  method set_entry_color.
-    clear entry->color.
-    append value #( fname = 'TOC_STATUS' color = value #( col = color ) ) to entry->color.
-  endmethod.
-
-
-  method set_fixed_column_text.
-    data(col) = alv_table->get_columns( )->get_column( column ).
-    if strlen( text ) > 20.
+  METHOD set_fixed_column_text.
+    DATA(col) = alv_table->get_columns( )->get_column( column ).
+    IF strlen( text ) > 20.
       col->set_long_text( text ).
       col->set_fixed_header_text( 'L' ).
-    elseif strlen( text ) > 10.
+    ELSEIF strlen( text ) > 10.
       col->set_long_text( text ).
-      col->set_medium_text( conv #( text ) ).
+      col->set_medium_text( CONV #( text ) ).
       col->set_fixed_header_text( 'M' ).
-    else.
+    ELSE.
       col->set_long_text( text ).
-      col->set_medium_text( conv #( text ) ).
-      col->set_short_text( conv #( text ) ).
+      col->set_medium_text( CONV #( text ) ).
+      col->set_short_text( CONV #( text ) ).
       col->set_fixed_header_text( 'S' ).
-    endif.
-  endmethod.
+    ENDIF.
+  ENDMETHOD.
 
-
-  method set_max_wait_time.
+  METHOD set_max_wait_time.
     me->max_wait_time_in_sec = seconds.
-  endmethod.
+  ENDMETHOD.
 
+  METHOD set_status_color.
+    DATA(color_cell) = REF #( report_data[ row ]-color ).
+    CLEAR color_cell->*.
+    APPEND VALUE #( fname = 'TOC_STATUS' color = VALUE #( col = color ) ) TO color_cell->*.
+  ENDMETHOD.
 
-  method set_status_color.
-    data(color_cell) = ref #( report_data[ row ]-color ).
-    clear color_cell->*.
-    append value #( fname = 'TOC_STATUS' color = value #( col = color ) ) to color_cell->*.
-  endmethod.
+  METHOD set_toc_description.
+    toc_manager = NEW #( toc_description ).
+  ENDMETHOD.
 
+  METHOD show_transport_details.
+    DATA batch_input TYPE TABLE OF bdcdata.
 
-  method set_toc_description.
-    toc_manager = new #( toc_description ).
-  endmethod.
+    APPEND VALUE #( program = 'RDDM0001' dynpro = '0200' dynbegin = 'X'  ) TO batch_input.
+    APPEND VALUE #( fnam = 'BDC_OKCODE' fval = '=TSSN' ) TO batch_input.
+    APPEND VALUE #( program = 'RDDM0001' dynpro = '0200' dynbegin = 'X'  ) TO batch_input.
+    APPEND VALUE #( fnam = 'BDC_SUBSCR' fval = 'RDDM0001                                0210COMMONSUBSCREEN' ) TO batch_input.
+    APPEND VALUE #( fnam = 'BDC_CURSOR' fval = 'TRDYSE01SN-TR_TRKORR' ) TO batch_input.
+    APPEND VALUE #( fnam = 'TRDYSE01SN-TR_TRKORR' fval = transport ) TO batch_input.
 
-
-  method show_transport_details.
-    data batch_input type table of bdcdata.
-
-    append value #( program = 'RDDM0001' dynpro = '0200' dynbegin = 'X'  ) to batch_input.
-    append value #( fnam = 'BDC_OKCODE' fval = '=TSSN' ) to batch_input.
-    append value #( program = 'RDDM0001' dynpro = '0200' dynbegin = 'X'  ) to batch_input.
-    append value #( fnam = 'BDC_SUBSCR' fval = 'RDDM0001                                0210COMMONSUBSCREEN' ) to batch_input.
-    append value #( fnam = 'BDC_CURSOR' fval = 'TRDYSE01SN-TR_TRKORR' ) to batch_input.
-    append value #( fnam = 'TRDYSE01SN-TR_TRKORR' fval = transport ) to batch_input.
-
-    data(call_options) = value ctu_params( dismode = 'E' updmode  = 'A' nobinpt = abap_true nobiend = abap_true ).
-    call transaction 'SE01' using batch_input options from call_options.
-  endmethod.
-
-endclass.
+    DATA(call_options) = VALUE ctu_params( dismode = 'E' updmode  = 'A' nobinpt = abap_true nobiend = abap_true ).
+    CALL TRANSACTION 'SE01' USING batch_input OPTIONS FROM call_options.
+  ENDMETHOD.
+ENDCLASS.

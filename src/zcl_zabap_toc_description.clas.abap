@@ -13,7 +13,7 @@ CLASS zcl_zabap_toc_description DEFINITION
 
     METHODS:
       constructor IMPORTING selected_description TYPE i DEFAULT c_toc_description-toc,
-      get_toc_description IMPORTING original_transport TYPE trkorr original_desciption TYPE string default space
+      get_toc_description IMPORTING original_transport TYPE trkorr original_desciption TYPE string DEFAULT space
                           RETURNING VALUE(toc_description) TYPE string
                           RAISING zcx_zabap_user_cancel.
 

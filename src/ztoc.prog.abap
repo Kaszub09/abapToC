@@ -25,7 +25,7 @@ SELECTION-SCREEN END OF BLOCK b02.
 
 SELECTION-SCREEN BEGIN OF BLOCK b03 WITH FRAME TITLE TEXT-b03.
 PARAMETERS p_maxwai TYPE i DEFAULT '30'.
-PARAMETERS vignore AS CHECKBOX DEFAULT abap_true.
+PARAMETERS p_verign AS CHECKBOX DEFAULT abap_true.
 " -----------------------------------------------------------------------
 SELECTION-SCREEN END OF BLOCK b03.
 
@@ -35,10 +35,7 @@ SELECTION-SCREEN END OF BLOCK b04.
 
 
 INITIALIZATION.
-  DATA(report) =
-    NEW zcl_zabap_toc_report(
-      report_id = sy-repid
-      ignore_version = vignore ).
+  DATA(report) = NEW zcl_zabap_toc_report( report_id = sy-repid ignore_version = p_verign ).
 
   " -----------------------------------------------------------------------
 

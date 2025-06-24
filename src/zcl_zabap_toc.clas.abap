@@ -1,7 +1,4 @@
-CLASS zcl_zabap_toc DEFINITION
-  PUBLIC
-  FINAL
-  CREATE PUBLIC.
+CLASS zcl_zabap_toc DEFINITION PUBLIC FINAL CREATE PUBLIC.
 
   PUBLIC SECTION.
     METHODS:
@@ -11,23 +8,21 @@ CLASS zcl_zabap_toc DEFINITION
              RAISING zcx_zabap_exception zcx_zabap_user_cancel,
       release IMPORTING toc TYPE trkorr RAISING zcx_zabap_exception,
       import IMPORTING toc TYPE trkorr target_system TYPE tr_target max_wait_time_in_sec TYPE i DEFAULT 30
-                       ignore_version type abap_bool default abap_true
+                       ignore_version TYPE abap_bool DEFAULT abap_true
              RETURNING VALUE(ret_code) TYPE trretcode RAISING zcx_zabap_exception,
       import_objects IMPORTING source_transport TYPE trkorr destination_transport TYPE trkorr RAISING zcx_zabap_exception,
       check_status_in_system IMPORTING toc TYPE trkorr system TYPE tr_target EXPORTING imported TYPE abap_bool rc TYPE i RAISING zcx_zabap_exception.
 
-protected section.
   PRIVATE SECTION.
-    CONSTANTS c_toc_doesnt_exists_retcode TYPE trretcode VALUE '0152'.
-    CONSTANTS c_transport_type_toc TYPE trfunction VALUE 'T'.
-    DATA toc_description TYPE REF TO zcl_zabap_toc_description.
+    CONSTANTS:
+      c_toc_doesnt_exists_retcode TYPE trretcode VALUE '0152',
+      c_transport_type_toc        TYPE trfunction VALUE 'T'.
+
+    DATA:
+     toc_description TYPE REF TO zcl_zabap_toc_description.
 ENDCLASS.
 
-
-
-CLASS ZCL_ZABAP_TOC IMPLEMENTATION.
-
-
+CLASS zcl_zabap_toc IMPLEMENTATION.
   METHOD check_status_in_system.
     DATA:
       settings TYPE ctslg_settings,
@@ -43,18 +38,16 @@ CLASS ZCL_ZABAP_TOC IMPLEMENTATION.
         es_cofile   = cofiles.
 
     IF cofiles-exists = abap_false.
-      RAISE EXCEPTION TYPE zcx_zabap_exception EXPORTING message = CONV #( TEXT-e05 ) .
+      RAISE EXCEPTION TYPE zcx_zabap_exception EXPORTING message = CONV #( TEXT-e05 ).
     ENDIF.
 
     imported = cofiles-imported.
     rc = cofiles-rc.
   ENDMETHOD.
 
-
   METHOD constructor.
     me->toc_description = toc_description.
   ENDMETHOD.
-
 
   METHOD create.
     TRY.
@@ -64,7 +57,7 @@ CLASS ZCL_ZABAP_TOC IMPLEMENTATION.
         import_objects( source_transport = source_transport destination_transport = transport_header-trkorr ).
         toc = transport_header-trkorr.
 
-      CATCH zcx_zabap_user_cancel INTO DATA(zcx).
+      CATCH zcx_zabap_user_cancel INTO DATA(zcx). " TODO: variable is assigned but never used (ABAP cleaner)
         RAISE EXCEPTION TYPE zcx_zabap_user_cancel.
 
       CATCH cx_root INTO DATA(cx).
@@ -72,9 +65,9 @@ CLASS ZCL_ZABAP_TOC IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
-
   METHOD import.
     DATA error TYPE string.
+
     GET TIME. "Update sy-uzeit before calculating wait_until
     DATA(wait_until) = CONV t( sy-uzeit + max_wait_time_in_sec ).
     ret_code = c_toc_doesnt_exists_retcode.
@@ -82,34 +75,29 @@ CLASS ZCL_ZABAP_TOC IMPLEMENTATION.
     WHILE ret_code = c_toc_doesnt_exists_retcode AND sy-uzeit <= wait_until.
       CALL FUNCTION 'ZABAP_TOC_UNPACK' DESTINATION target_system
         EXPORTING
-          toc           = toc
-          target_system = target_system
+          toc            = toc
+          target_system  = target_system
           ignore_version = ignore_version
         IMPORTING
-          ret_code      = ret_code
-          error         = error.
+          ret_code       = ret_code
+          error          = error.
 
       GET TIME. "Update sy-uzeit before comparing time
     ENDWHILE.
 
     IF strlen( error ) > 0.
-      RAISE EXCEPTION TYPE zcx_zabap_exception
-        EXPORTING
-          message = replace( val = TEXT-e03 sub = '&1' with = error ).
+      RAISE EXCEPTION TYPE zcx_zabap_exception EXPORTING message = replace( val = TEXT-e03 sub = '&1' with = error ).
     ENDIF.
   ENDMETHOD.
 
-
   METHOD import_objects.
     DATA request_headers TYPE trwbo_request_headers.
-    DATA requests        TYPE trwbo_requests.
 
     CALL FUNCTION 'TR_READ_REQUEST_WITH_TASKS'
       EXPORTING
         iv_trkorr          = source_transport
       IMPORTING
         et_request_headers = request_headers
-        et_requests        = requests
       EXCEPTIONS
         invalid_input      = 1
         OTHERS             = 2.
@@ -146,7 +134,6 @@ CLASS ZCL_ZABAP_TOC IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
   ENDMETHOD.
-
 
   METHOD release.
     TRY.

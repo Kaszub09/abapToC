@@ -2179,6 +2179,12 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_VERIGN</KEY>
+     <ENTRY>Ignore version on import</ENTRY>
+     <LENGTH>32</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>SO_DESCR</KEY>
      <ENTRY>.</ENTRY>
      <LENGTH>9</LENGTH>
@@ -2197,12 +2203,6 @@
      <ENTRY>.</ENTRY>
      <LENGTH>9</LENGTH>
      <SPLIT>D</SPLIT>
-    </item>
-    <item>
-     <ID>S</ID>
-     <KEY>VIGNORE</KEY>
-     <ENTRY>Ignore version on import</ENTRY>
-     <LENGTH>32</LENGTH>
     </item>
    </TPOOL>
    <I18N_TPOOL>
