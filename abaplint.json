@@ -27,7 +27,7 @@
   },
   "rules": {
     "7bit_ascii": {
-      "exclude": [ ],
+      "exclude": [],
       "severity": "Error"
     },
     "allowed_object_naming": {
@@ -127,7 +127,7 @@
       "checkData": true
     },
     "fully_type_itabs": {
-      "exclude": [ ],
+      "exclude": [],
       "severity": "Error"
     },
     "function_module_recommendations": {
