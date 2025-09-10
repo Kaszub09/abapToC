@@ -4,6 +4,7 @@ ABAP Transport of Copies
 ## Features
 
 1. New Transaction *ZTOC* which allows for easy creation/release/import of Transport of Copies
+   If a variant with name **"U_\<username\>"** is present, it will be used automatically
 
 ![obraz](https://github.com/Kaszub09/abapToC/assets/34368953/5d88049f-759c-40e7-addb-2d443c4af5be)
 ![report](https://github.com/Kaszub09/abapToC/assets/34368953/9942d528-7b71-4db8-bcf1-82906ed1aa90)
