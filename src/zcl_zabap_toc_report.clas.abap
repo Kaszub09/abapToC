@@ -15,7 +15,8 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
                         include_released TYPE abap_bool DEFAULT abap_true include_tocs TYPE abap_bool DEFAULT abap_false
                         include_subtransports TYPE abap_bool DEFAULT abap_false,
       display IMPORTING layout_name TYPE slis_vari OPTIONAL,
-      get_layout_from_f4_selection RETURNING VALUE(layout) TYPE slis_vari.
+      get_layout_from_f4_selection RETURNING VALUE(layout) TYPE slis_vari,
+      pbo.
 
   PRIVATE SECTION.
     TYPES:
@@ -70,20 +71,32 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       report_data           TYPE tt_report,
       max_wait_time_in_sec  TYPE i,
       ignore_version        TYPE abap_bool,
-      include_subtransports TYPE abap_bool.
+      include_subtransports TYPE abap_bool,
+      main_container        TYPE REF TO cl_gui_custom_container,
+      alv_container         TYPE REF TO cl_gui_container,
+      sys_container         TYPE REF TO cl_gui_container,
+      layout_name           TYPE slis_vari,
+      systems_list          TYPE REF TO cl_salv_table,
+      systems               TYPE zcl_zabap_toc_systemlist=>system_lines,
+      selected_system       TYPE tmssysnam,
+      alv_functions         TYPE REF TO cl_salv_functions_list.
 
     METHODS:
       set_column_hotspot_icon IMPORTING column TYPE lvc_fname RAISING cx_salv_error,
-      set_fixed_column_text   IMPORTING column TYPE lvc_fname text TYPE scrtext_l,
+      set_fixed_column_text   IMPORTING column TYPE lvc_fname text TYPE scrtext_l raising cx_salv_error,
       set_status_color IMPORTING row TYPE i color TYPE i,
       set_entry_color IMPORTING entry TYPE REF TO t_report color TYPE i,
-      prepare_alv_table IMPORTING layout_name TYPE slis_vari,
+      prepare_alv_table IMPORTING layout_name TYPE slis_vari RAISING cx_salv_error,
       on_link_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row column,
       on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row column,
       on_added_function FOR EVENT added_function OF cl_salv_events IMPORTING e_salv_function,
       show_transport_details IMPORTING transport TYPE trkorr,
-      setup_sorts,
-      hide_main_transport.
+      setup_sorts RAISING cx_salv_error,
+      hide_main_transport raising cx_salv_error,
+      on_systems_click FOR EVENT link_click OF cl_salv_events_table IMPORTING row,
+      prepare_systems_list raising cx_salv_error,
+      add_function IMPORTING code TYPE ui_func icon TYPE icon_l2 text TYPE text132 RAISING cx_salv_error.
+
 ENDCLASS.
 
 CLASS zcl_zabap_toc_report IMPLEMENTATION.
@@ -94,8 +107,10 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD display.
-    prepare_alv_table( layout_name ).
-    alv_table->display( ).
+    me->layout_name = layout_name.
+    CALL FUNCTION 'Z_ABAP_TOC_DISPLAY'
+      EXPORTING
+        controller = me.
   ENDMETHOD.
 
   METHOD gather_transports.
@@ -171,18 +186,21 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DATA(selected) = REF #( report_data[ row ] ).
     CLEAR selected->color.
 
+    DATA(target_system) = COND #(
+      WHEN selected_system IS INITIAL THEN selected->target_system ELSE selected_system ).
+
     TRY.
         CASE column.
             "--------------------------------------------------
           WHEN c_toc_columns-create_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = target_system
                                                         source_description = CONV #( selected->description ) ).
             selected->toc_status = TEXT-s01.
             set_status_color( row = row color = c_status_color-green ).
 
             "--------------------------------------------------
           WHEN c_toc_columns-create_release_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = target_system
                                                         source_description = CONV #( selected->description ) ).
             toc_manager->release( selected->toc_number ).
             selected->toc_status = TEXT-s02.
@@ -190,10 +208,10 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
 
             "--------------------------------------------------
           WHEN c_toc_columns-create_release_import_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = target_system
                                                         source_description = CONV #( selected->description ) ).
             toc_manager->release( selected->toc_number ).
-            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system
+            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = target_system
                   max_wait_time_in_sec = max_wait_time_in_sec ignore_version = ignore_version ) ).
             selected->toc_status = TEXT-s03.
             selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
@@ -219,7 +237,13 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD prepare_alv_table.
-    cl_salv_table=>factory( IMPORTING r_salv_table = alv_table CHANGING  t_table = report_data ).
+    cl_salv_table=>factory(
+      EXPORTING
+        r_container = alv_container
+      IMPORTING
+        r_salv_table = alv_table
+      CHANGING
+        t_table = report_data ).
 
     " Set columns as icons
     set_column_hotspot_icon( CONV #( c_toc_columns-create_toc ) ).
@@ -256,12 +280,31 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     alv_table->get_columns( )->set_color_column( 'COLOR' ).
 
     alv_table->get_selections( )->set_selection_mode( if_salv_c_selection_mode=>row_column ).
-    alv_table->set_screen_status( report = 'ZTOC' pfstatus = 'MAIN' ).
+    alv_functions = alv_table->get_functions( ).
+
+    add_function( code = 'TOC_C' icon = icon_transport text = 'Create ToCs'(008) ).
+    add_function( code = 'TOC_CR' icon = icon_transport text = 'Create/Release ToCs'(009) ).
+    add_function( code = 'TOC_CRI' icon = icon_transport text = 'Create/Release/Import ToCs'(010) ).
+    add_function( code = 'STMS' icon = icon_transport text = 'STMS' ).
 
     hide_main_transport( ).
 
     setup_sorts( ).
   ENDMETHOD.
+
+  METHOD add_function.
+
+    alv_functions->add_function(
+          EXPORTING
+            name     = code
+            icon     = CONV #( icon )
+            text     = CONV #( text )
+            tooltip  = CONV #( text )
+            position = if_salv_c_function_position=>right_of_salv_functions ).
+
+  ENDMETHOD.
+
+
 
   METHOD hide_main_transport.
     IF include_subtransports = abap_false.
@@ -343,4 +386,59 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     DATA(call_options) = VALUE ctu_params( dismode = 'E' updmode  = 'A' nobinpt = abap_true nobiend = abap_true ).
     CALL TRANSACTION 'SE01' WITH AUTHORITY-CHECK USING batch_input OPTIONS FROM call_options.
   ENDMETHOD.
+
+  METHOD on_systems_click.
+    LOOP AT systems INTO DATA(line).
+      IF sy-tabix = row.
+        line-colors = VALUE #( ( color = VALUE #( col = col_positive ) ) ).
+        selected_system = line-sysnam.
+      ELSE.
+        CLEAR line-colors.
+      ENDIF.
+      MODIFY systems FROM line.
+    ENDLOOP.
+    systems_list->refresh( ).
+  ENDMETHOD.
+
+  METHOD pbo.
+    TRY.
+        IF main_container IS NOT BOUND.
+          main_container = NEW #( 'MAIN_AREA' ).
+          DATA(split) = NEW cl_gui_splitter_container(
+             parent  = main_container
+             rows    = 2
+             columns = 1 ).
+          alv_container = split->get_container( row = 1 column = 1 ).
+          sys_container = split->get_container( row = 2 column = 1 ).
+          prepare_alv_table( layout_name ).
+          alv_table->display( ).
+          prepare_systems_list( ).
+          systems_list->display( ).
+          selected_system = space.
+        ENDIF.
+      CATCH cx_salv_error INTO DATA(e).
+        MESSAGE e TYPE 'E'.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD prepare_systems_list.
+    systems = zcl_zabap_toc_systemlist=>get( ).
+    cl_salv_table=>factory(
+      EXPORTING
+        r_container    = sys_container
+      IMPORTING
+        r_salv_table   = systems_list
+      CHANGING
+        t_table        = systems
+    ).
+    systems_list->get_display_settings( )->set_list_header( 'Select a destination system'(011) ).
+    systems_list->get_display_settings( )->set_list_header_size( cl_salv_display_settings=>c_header_size_small ).
+    systems_list->get_columns( )->set_color_column( 'COLORS' ).
+    CAST cl_salv_column_table( systems_list->get_columns( )->get_column( 'SYSTXT' ) )->set_cell_type( if_salv_c_cell_type=>hotspot ).
+    SET HANDLER on_systems_click FOR systems_list->get_event( ).
+
+    systems_list->display( ).
+
+  ENDMETHOD.
+
 ENDCLASS.

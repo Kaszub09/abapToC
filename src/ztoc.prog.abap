@@ -36,6 +36,17 @@ SELECTION-SCREEN END OF BLOCK b04.
 
 INITIALIZATION.
   DATA(report) = NEW zcl_zabap_toc_report( report_id = sy-repid ignore_version = p_verign ).
+  DATA(svar) = VALUE rsvar(
+    report  = sy-cprog
+    variant = |U_{ sy-uname }| ).
+
+
+  CALL FUNCTION 'RS_SUPPORT_SELECTIONS'     "#EC *
+    EXPORTING
+      report  = svar-report
+      variant = svar-variant
+    EXCEPTIONS
+      OTHERS  = 0.
 
   " -----------------------------------------------------------------------
 

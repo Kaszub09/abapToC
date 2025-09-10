@@ -2185,21 +2185,21 @@
     </item>
     <item>
      <ID>S</ID>
-     <KEY>SO_DESCR</KEY>
+     <KEY>S_DESCR</KEY>
      <ENTRY>.</ENTRY>
      <LENGTH>9</LENGTH>
      <SPLIT>D</SPLIT>
     </item>
     <item>
      <ID>S</ID>
-     <KEY>SO_OWNER</KEY>
+     <KEY>S_OWNER</KEY>
      <ENTRY>.</ENTRY>
      <LENGTH>9</LENGTH>
      <SPLIT>D</SPLIT>
     </item>
     <item>
      <ID>S</ID>
-     <KEY>SO_TRNUM</KEY>
+     <KEY>S_TRNUM</KEY>
      <ENTRY>.</ENTRY>
      <LENGTH>9</LENGTH>
      <SPLIT>D</SPLIT>
