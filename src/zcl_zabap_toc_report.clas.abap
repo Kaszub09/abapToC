@@ -7,15 +7,16 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       tt_range_of_description TYPE RANGE OF as4text.
 
     METHODS:
-      constructor IMPORTING report_id TYPE sy-repid,
-      set_parameters IMPORTING ignore_version TYPE abap_bool  new_target_system TYPE tr_target max_wait_time_in_sec TYPE i,
+      constructor IMPORTING report_id TYPE sy-repid ignore_version TYPE abap_bool,
+      set_max_wait_time IMPORTING seconds TYPE i,
       set_toc_description IMPORTING toc_description TYPE REF TO zcl_zabap_toc_description,
       gather_transports IMPORTING tranports TYPE tt_range_of_transport OPTIONAL owners TYPE tt_range_of_owner OPTIONAL
                         descriptions TYPE tt_range_of_description OPTIONAL
                         include_released TYPE abap_bool DEFAULT abap_true include_tocs TYPE abap_bool DEFAULT abap_false
                         include_subtransports TYPE abap_bool DEFAULT abap_false,
       display IMPORTING layout_name TYPE slis_vari OPTIONAL,
-      get_layout_from_f4_selection RETURNING VALUE(layout) TYPE slis_vari .
+      get_layout_from_f4_selection RETURNING VALUE(layout) TYPE slis_vari,
+      set_new_target_system IMPORTING new_target_system TYPE tr_target.
 
   PRIVATE SECTION.
     TYPES:
@@ -89,6 +90,7 @@ ENDCLASS.
 
 CLASS zcl_zabap_toc_report IMPLEMENTATION.
   METHOD constructor.
+    me->ignore_version = ignore_version.
     layout_key = VALUE salv_s_layout_key( report = report_id ).
     toc_manager = NEW #( NEW zcl_zabap_toc_description( zcl_zabap_toc_description=>c_toc_description-toc ) ).
   ENDMETHOD.
@@ -321,6 +323,9 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+  METHOD set_max_wait_time.
+    me->max_wait_time_in_sec = seconds.
+  ENDMETHOD.
 
   METHOD set_status_color.
     DATA(color_cell) = REF #( report_data[ row ]-color ).
@@ -346,10 +351,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     CALL TRANSACTION 'SE01' WITH AUTHORITY-CHECK USING batch_input OPTIONS FROM call_options.
   ENDMETHOD.
 
-  METHOD set_parameters.
-    me->ignore_version = ignore_version.
+  METHOD set_new_target_system.
     me->new_target_system = new_target_system.
-    me->max_wait_time_in_sec = max_wait_time_in_sec.
   ENDMETHOD.
-
 ENDCLASS.
