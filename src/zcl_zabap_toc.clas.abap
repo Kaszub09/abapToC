@@ -72,18 +72,53 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
     DATA(wait_until) = CONV t( sy-uzeit + max_wait_time_in_sec ).
     ret_code = c_toc_doesnt_exists_retcode.
 
-    WHILE ret_code = c_toc_doesnt_exists_retcode AND sy-uzeit <= wait_until.
-      CALL FUNCTION 'ZABAP_TOC_UNPACK' DESTINATION target_system
-        EXPORTING
-          toc            = toc
-          target_system  = target_system
-          ignore_version = ignore_version
-        IMPORTING
-          ret_code       = ret_code
-          error          = error.
+    "=================================================================
+    IF target_system = '/GMMX/'.
+      WHILE ret_code = c_toc_doesnt_exists_retcode AND sy-uzeit <= wait_until.
+        CALL FUNCTION 'ZABAP_TOC_UNPACK' DESTINATION 'MMX'
+          EXPORTING
+            toc           = toc
+            target_system = 'MMX.100'
+          IMPORTING
+            ret_code      = ret_code
+            error         = error.
 
-      GET TIME. "Update sy-uzeit before comparing time
-    ENDWHILE.
+        GET TIME. "Update sy-uzeit before comparing time
+      ENDWHILE.
+      IF strlen( error ) > 0.
+        RAISE EXCEPTION TYPE zcx_zabap_exception
+          EXPORTING
+            message = replace( val = TEXT-e03 sub = '&1' with = error ).
+      ENDIF.
+      "-----------------------------------------------------------------
+      GET TIME. "Update sy-uzeit before calculating wait_until
+      wait_until = CONV t( sy-uzeit + max_wait_time_in_sec ).
+      ret_code = c_toc_doesnt_exists_retcode.
+      WHILE ret_code = c_toc_doesnt_exists_retcode AND sy-uzeit <= wait_until.
+        CALL FUNCTION 'ZABAP_TOC_UNPACK' DESTINATION 'MMX'
+          EXPORTING
+            toc           = toc
+            target_system = 'MMX.200'
+          IMPORTING
+            ret_code      = ret_code
+            error         = error.
+
+        GET TIME. "Update sy-uzeit before comparing time
+      ENDWHILE.
+    ELSE.
+      WHILE ret_code = c_toc_doesnt_exists_retcode AND sy-uzeit <= wait_until.
+        CALL FUNCTION 'ZABAP_TOC_UNPACK' DESTINATION target_system
+          EXPORTING
+            toc           = toc
+            target_system = target_system
+          IMPORTING
+            ret_code      = ret_code
+            error         = error.
+
+        GET TIME. "Update sy-uzeit before comparing time
+      ENDWHILE.
+    ENDIF.
+    "=================================================================
 
     IF strlen( error ) > 0.
       RAISE EXCEPTION TYPE zcx_zabap_exception EXPORTING message = replace( val = TEXT-e03 sub = '&1' with = error ).
