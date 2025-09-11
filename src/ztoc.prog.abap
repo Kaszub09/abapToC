@@ -8,6 +8,10 @@ REPORT ztoc.
 " -----------------------------------------------------------------------
 TABLES: e070, e07t.
 
+SELECTION-SCREEN BEGIN OF BLOCK b05 WITH FRAME TITLE TEXT-b05.
+PARAMETERS p_tarsys TYPE ko013-tarsystem.
+SELECTION-SCREEN END OF BLOCK b05.
+
 SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE TEXT-b01.
 SELECT-OPTIONS s_trnum FOR e070-trkorr. " Transport numbers
 SELECT-OPTIONS s_owner FOR e070-as4user DEFAULT sy-uname. " Transport owners
@@ -41,6 +45,7 @@ INITIALIZATION.
 
 START-OF-SELECTION.
   report->set_max_wait_time( p_maxwai ).
+  report->set_new_target_system( p_tarsys ).
   report->set_toc_description( toc_description = NEW #( COND #( WHEN p_destoc = abap_true THEN zcl_zabap_toc_description=>c_toc_description-toc
       WHEN p_desori = abap_true THEN zcl_zabap_toc_description=>c_toc_description-original
       WHEN p_descus = abap_true THEN zcl_zabap_toc_description=>c_toc_description-custom ) ) ).

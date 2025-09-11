@@ -2100,6 +2100,11 @@
    </CUA>
    <TPOOL>
     <item>
+     <ID>R</ID>
+     <ENTRY>ZABAP Transport of Copies</ENTRY>
+     <LENGTH>25</LENGTH>
+    </item>
+    <item>
      <ID>I</ID>
      <KEY>B01</KEY>
      <ENTRY>Selection</ENTRY>
@@ -2124,9 +2129,10 @@
      <LENGTH>16</LENGTH>
     </item>
     <item>
-     <ID>R</ID>
-     <ENTRY>ZABAP Transport of Copies</ENTRY>
-     <LENGTH>25</LENGTH>
+     <ID>I</ID>
+     <KEY>B05</KEY>
+     <ENTRY>Target system</ENTRY>
+     <LENGTH>23</LENGTH>
     </item>
     <item>
      <ID>S</ID>
@@ -2173,6 +2179,13 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_TARSYS</KEY>
+     <ENTRY>.</ENTRY>
+     <LENGTH>9</LENGTH>
+     <SPLIT>D</SPLIT>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>P_TOCS</KEY>
      <ENTRY>Include ToCs</ENTRY>
      <LENGTH>20</LENGTH>
@@ -2185,21 +2198,21 @@
     </item>
     <item>
      <ID>S</ID>
-     <KEY>SO_DESCR</KEY>
+     <KEY>S_DESCR</KEY>
      <ENTRY>.</ENTRY>
      <LENGTH>9</LENGTH>
      <SPLIT>D</SPLIT>
     </item>
     <item>
      <ID>S</ID>
-     <KEY>SO_OWNER</KEY>
+     <KEY>S_OWNER</KEY>
      <ENTRY>.</ENTRY>
      <LENGTH>9</LENGTH>
      <SPLIT>D</SPLIT>
     </item>
     <item>
      <ID>S</ID>
-     <KEY>SO_TRNUM</KEY>
+     <KEY>S_TRNUM</KEY>
      <ENTRY>.</ENTRY>
      <LENGTH>9</LENGTH>
      <SPLIT>D</SPLIT>
@@ -2232,6 +2245,12 @@
        <KEY>B04</KEY>
        <ENTRY>Układ</ENTRY>
        <LENGTH>16</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>B05</KEY>
+       <ENTRY>System docelowy</ENTRY>
+       <LENGTH>23</LENGTH>
       </item>
       <item>
        <ID>R</ID>
@@ -2282,6 +2301,12 @@
       </item>
       <item>
        <ID>S</ID>
+       <KEY>P_VERIGN</KEY>
+       <ENTRY>Ignoruj ostrz.wer. przy impor.</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
        <KEY>P_LAYOUT</KEY>
        <ENTRY>.</ENTRY>
        <LENGTH>9</LENGTH>
@@ -2289,21 +2314,28 @@
       </item>
       <item>
        <ID>S</ID>
-       <KEY>SO_DESCR</KEY>
+       <KEY>P_TARSYS</KEY>
        <ENTRY>.</ENTRY>
        <LENGTH>9</LENGTH>
        <SPLIT>D</SPLIT>
       </item>
       <item>
        <ID>S</ID>
-       <KEY>SO_OWNER</KEY>
+       <KEY>S_DESCR</KEY>
        <ENTRY>.</ENTRY>
        <LENGTH>9</LENGTH>
        <SPLIT>D</SPLIT>
       </item>
       <item>
        <ID>S</ID>
-       <KEY>SO_TRNUM</KEY>
+       <KEY>S_OWNER</KEY>
+       <ENTRY>.</ENTRY>
+       <LENGTH>9</LENGTH>
+       <SPLIT>D</SPLIT>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>S_TRNUM</KEY>
        <ENTRY>.</ENTRY>
        <LENGTH>9</LENGTH>
        <SPLIT>D</SPLIT>

@@ -15,7 +15,8 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
                         include_released TYPE abap_bool DEFAULT abap_true include_tocs TYPE abap_bool DEFAULT abap_false
                         include_subtransports TYPE abap_bool DEFAULT abap_false,
       display IMPORTING layout_name TYPE slis_vari OPTIONAL,
-      get_layout_from_f4_selection RETURNING VALUE(layout) TYPE slis_vari.
+      get_layout_from_f4_selection RETURNING VALUE(layout) TYPE slis_vari,
+      set_new_target_system IMPORTING new_target_system TYPE tr_target.
 
   PRIVATE SECTION.
     TYPES:
@@ -70,7 +71,8 @@ CLASS zcl_zabap_toc_report DEFINITION PUBLIC FINAL CREATE PUBLIC.
       report_data           TYPE tt_report,
       max_wait_time_in_sec  TYPE i,
       ignore_version        TYPE abap_bool,
-      include_subtransports TYPE abap_bool.
+      include_subtransports TYPE abap_bool,
+      new_target_system     TYPE tr_target.
 
     METHODS:
       set_column_hotspot_icon IMPORTING column TYPE lvc_fname RAISING cx_salv_error,
@@ -172,17 +174,18 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     CLEAR selected->color.
 
     TRY.
+        DATA(target_system) = COND #( WHEN new_target_system IS INITIAL THEN selected->target_system ELSE new_target_system ).
         CASE column.
             "--------------------------------------------------
           WHEN c_toc_columns-create_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = target_system
                                                         source_description = CONV #( selected->description ) ).
             selected->toc_status = TEXT-s01.
             set_status_color( row = row color = c_status_color-green ).
 
             "--------------------------------------------------
           WHEN c_toc_columns-create_release_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = target_system
                                                         source_description = CONV #( selected->description ) ).
             toc_manager->release( selected->toc_number ).
             selected->toc_status = TEXT-s02.
@@ -190,10 +193,10 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
 
             "--------------------------------------------------
           WHEN c_toc_columns-create_release_import_toc.
-            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = selected->target_system
+            selected->toc_number = toc_manager->create( source_transport = selected->transport target_system = target_system
                                                         source_description = CONV #( selected->description ) ).
             toc_manager->release( selected->toc_number ).
-            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = selected->target_system
+            DATA(rc) = CONV i( toc_manager->import( toc = selected->toc_number target_system = target_system
                   max_wait_time_in_sec = max_wait_time_in_sec ignore_version = ignore_version ) ).
             selected->toc_status = TEXT-s03.
             selected->toc_status = replace( val = TEXT-s04 sub = '&1' with = |{ rc }| ).
@@ -209,7 +212,7 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
         selected->toc_status = exception->get_text( ).
         set_status_color( row = row color = c_status_color-red ).
 
-      CATCH zcx_zabap_user_cancel INTO DATA(user_canceled). " TODO: variable is assigned but never used (ABAP cleaner)
+      CATCH zcx_zabap_user_cancel.
         selected->toc_status = TEXT-e01.
         set_status_color( row = row color = c_status_color-red ).
 
@@ -261,6 +264,10 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
     hide_main_transport( ).
 
     setup_sorts( ).
+
+    IF new_target_system IS NOT INITIAL.
+      alv_table->set_top_of_list( NEW cl_salv_form_label( text = replace( val = TEXT-001 sub = '&1' with = new_target_system ) ) ).
+    ENDIF.
   ENDMETHOD.
 
   METHOD hide_main_transport.
@@ -342,5 +349,9 @@ CLASS zcl_zabap_toc_report IMPLEMENTATION.
 
     DATA(call_options) = VALUE ctu_params( dismode = 'E' updmode  = 'A' nobinpt = abap_true nobiend = abap_true ).
     CALL TRANSACTION 'SE01' WITH AUTHORITY-CHECK USING batch_input OPTIONS FROM call_options.
+  ENDMETHOD.
+
+  METHOD set_new_target_system.
+    me->new_target_system = new_target_system.
   ENDMETHOD.
 ENDCLASS.

@@ -14,6 +14,12 @@
    <TPOOL>
     <item>
      <ID>I</ID>
+     <KEY>001</KEY>
+     <ENTRY>ToC will be sent to target system: &amp;1</ENTRY>
+     <LENGTH>74</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>C01</KEY>
      <ENTRY>Create ToC</ENTRY>
      <LENGTH>20</LENGTH>
@@ -91,6 +97,12 @@
      <TEXTPOOL>
       <item>
        <ID>I</ID>
+       <KEY>001</KEY>
+       <ENTRY>TK zostanie wysłany do systemu: &amp;1</ENTRY>
+       <LENGTH>74</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>C01</KEY>
        <ENTRY>Stwórz TK</ENTRY>
        <LENGTH>20</LENGTH>
@@ -118,6 +130,24 @@
        <KEY>C05</KEY>
        <ENTRY>Status TK</ENTRY>
        <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>C06</KEY>
+       <ENTRY>Transport nadrzędny</ENTRY>
+       <LENGTH>24</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>C07</KEY>
+       <ENTRY>Zwolniony</ENTRY>
+       <LENGTH>14</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>E01</KEY>
+       <ENTRY>Anulowany</ENTRY>
+       <LENGTH>19</LENGTH>
       </item>
       <item>
        <ID>I</ID>
