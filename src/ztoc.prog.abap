@@ -39,13 +39,12 @@ SELECTION-SCREEN END OF BLOCK b04.
 
 
 INITIALIZATION.
-  DATA(report) = NEW zcl_zabap_toc_report( report_id = sy-repid ignore_version = p_verign ).
+  DATA(report) = NEW zcl_zabap_toc_report( sy-repid ).
 
   " -----------------------------------------------------------------------
 
 START-OF-SELECTION.
-  report->set_max_wait_time( p_maxwai ).
-  report->set_new_target_system( p_tarsys ).
+  report->set_parameters( ignore_version = p_verign new_target_system = p_tarsys max_wait_time_in_sec = p_maxwai ).
   report->set_toc_description( toc_description = NEW #( COND #( WHEN p_destoc = abap_true THEN zcl_zabap_toc_description=>c_toc_description-toc
       WHEN p_desori = abap_true THEN zcl_zabap_toc_description=>c_toc_description-original
       WHEN p_descus = abap_true THEN zcl_zabap_toc_description=>c_toc_description-custom ) ) ).
