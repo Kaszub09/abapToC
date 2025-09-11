@@ -30,3 +30,4 @@ ABAP Transport of Copies
 - v1.2.1 - add STMS button
 - v1.3 - retry importing ToC for a specified amount of time if not yet visible in target system (apparently, release funciton isn't fully synchronous?)
 - v1.4 - add support for sub transport, minor enhancements
+- 11.09.2025 - add support for selecting different target system (thanks for idea [jrgkraus](https://github.com/jrgkraus))
