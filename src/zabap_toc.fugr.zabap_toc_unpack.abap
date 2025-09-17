@@ -29,6 +29,10 @@ FUNCTION zabap_toc_unpack.
           es_exception = exception
         EXCEPTIONS
           OTHERS       = 99.
+      IF sy-subrc = 99.
+        error = TEXT-001.
+        RETURN.
+      ENDIF.
 
       CALL FUNCTION 'TMS_MGR_IMPORT_TR_REQUEST'
         EXPORTING
