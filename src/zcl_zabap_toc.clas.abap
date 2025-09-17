@@ -15,11 +15,27 @@ CLASS zcl_zabap_toc DEFINITION PUBLIC FINAL CREATE PUBLIC.
 
   PRIVATE SECTION.
     CONSTANTS:
-      c_toc_doesnt_exists_retcode TYPE trretcode VALUE '0152',
-      c_transport_type_toc        TYPE trfunction VALUE 'T'.
+      BEGIN OF c_ret_code,
+        doesnt_exists     TYPE trretcode VALUE '0152',
+        unpacked_ok       TYPE trretcode VALUE '0000',
+        unpacked_warnings TYPE trretcode VALUE '0004',
+      END OF c_ret_code,
+      c_transport_type_toc TYPE trfunction VALUE 'T'.
+
+    TYPES:
+      tt_systems TYPE STANDARD TABLE OF tr_target WITH EMPTY KEY,
+      BEGIN OF t_systems_cache,
+        target_system TYPE tr_target,
+        systems       TYPE tt_systems,
+      END OF t_systems_cache,
+      tt_systems_cache TYPE SORTED TABLE OF t_systems_cache WITH UNIQUE KEY target_system.
+
+    METHODS:
+      get_systems IMPORTING target_system TYPE tr_target RETURNING VALUE(systems) TYPE tt_systems.
 
     DATA:
-     toc_description TYPE REF TO zcl_zabap_toc_description.
+      toc_description TYPE REF TO zcl_zabap_toc_description,
+      systems_cache   TYPE tt_systems_cache.
 ENDCLASS.
 
 CLASS zcl_zabap_toc IMPLEMENTATION.
@@ -66,28 +82,36 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD import.
-    DATA error TYPE string.
+    DATA:
+      error            TYPE string,
+      unpacked_systems TYPE string.
 
-    GET TIME. "Update sy-uzeit before calculating wait_until
-    DATA(wait_until) = CONV t( sy-uzeit + max_wait_time_in_sec ).
-    ret_code = c_toc_doesnt_exists_retcode.
+    LOOP AT get_systems( target_system ) REFERENCE INTO DATA(system).
+      GET TIME. "Update sy-uzeit before calculating wait_until
+      DATA(wait_until) = CONV t( sy-uzeit + max_wait_time_in_sec ).
+      ret_code = c_ret_code-doesnt_exists.
 
-    WHILE ret_code = c_toc_doesnt_exists_retcode AND sy-uzeit <= wait_until.
-      CALL FUNCTION 'ZABAP_TOC_UNPACK' DESTINATION target_system
-        EXPORTING
-          toc            = toc
-          target_system  = target_system
-          ignore_version = ignore_version
-        IMPORTING
-          ret_code       = ret_code
-          error          = error.
+      WHILE ret_code = c_ret_code-doesnt_exists AND sy-uzeit <= wait_until.
+        CALL FUNCTION 'ZABAP_TOC_UNPACK' DESTINATION system->*
+          EXPORTING
+            toc            = toc
+            target_system  = system->*
+            ignore_version = ignore_version
+          IMPORTING
+            ret_code       = ret_code
+            error          = error.
 
-      GET TIME. "Update sy-uzeit before comparing time
-    ENDWHILE.
+        GET TIME. "Update sy-uzeit before comparing time
+      ENDWHILE.
 
-    IF strlen( error ) > 0.
-      RAISE EXCEPTION TYPE zcx_zabap_exception EXPORTING message = replace( val = TEXT-e03 sub = '&1' with = error ).
-    ENDIF.
+      IF ( ret_code = c_ret_code-unpacked_ok OR ret_code = c_ret_code-unpacked_warnings ) AND strlen( error ) = 0.
+        unpacked_systems = |{ unpacked_systems } { replace( val = TEXT-001 sub = '&1' with = system->* ) }|.
+      ELSE.
+        error = COND #( WHEN error IS INITIAL THEN ret_code ELSE error ).
+        RAISE EXCEPTION TYPE zcx_zabap_exception EXPORTING message = |{ unpacked_systems
+            } { replace( val = replace( val = TEXT-e03 sub = '&1' with = system->* ) sub = '&2' with = error ) }|.
+      ENDIF.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD import_objects.
@@ -143,5 +167,27 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
       CATCH cx_root INTO DATA(cx).
         RAISE EXCEPTION TYPE zcx_zabap_exception EXPORTING message = replace( val = TEXT-e02 sub = '&1' with = cx->get_text( ) ).
     ENDTRY.
+  ENDMETHOD.
+
+  METHOD get_systems.
+    IF target_system(1) <> '/'.
+      systems = VALUE #( ( target_system ) ).
+      RETURN.
+    ENDIF.
+
+    DATA(systems_ref) = REF #( systems_cache[ target_system = target_system ] OPTIONAL ).
+    IF systems_ref IS BOUND.
+      systems = systems_ref->systems.
+      RETURN.
+    ENDIF.
+
+    INSERT VALUE #( target_system = target_system ) INTO TABLE systems_cache REFERENCE INTO systems_ref.
+
+    SELECT concat( tarsystem, concat( '.', tarclient ) ) FROM tcetarg
+    WHERE version IN ( SELECT MAX( version ) AS version FROM tcetarg WHERE targ_group = @target_system )
+        AND targ_group = @target_system
+    INTO TABLE @systems_ref->systems.
+
+    systems = systems_ref->systems.
   ENDMETHOD.
 ENDCLASS.

@@ -14,6 +14,12 @@
    <TPOOL>
     <item>
      <ID>I</ID>
+     <KEY>001</KEY>
+     <ENTRY>Unpacked in &amp;1.</ENTRY>
+     <LENGTH>25</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>E01</KEY>
      <ENTRY>Creation error - &amp;1</ENTRY>
      <LENGTH>29</LENGTH>
@@ -27,7 +33,7 @@
     <item>
      <ID>I</ID>
      <KEY>E03</KEY>
-     <ENTRY>Import error - &amp;1</ENTRY>
+     <ENTRY>Import error at &amp;1 - &amp;2</ENTRY>
      <LENGTH>28</LENGTH>
     </item>
     <item>
