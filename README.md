@@ -5,7 +5,8 @@ ABAP Transport of Copies
 
 1. New Transaction *ZTOC* which allows for easy creation/release/import of Transport of Copies
 
-![obraz](https://github.com/Kaszub09/abapToC/assets/34368953/5d88049f-759c-40e7-addb-2d443c4af5be)
+<img width="1015" height="593" alt="obraz" src="https://github.com/user-attachments/assets/b9ba4d10-0db1-4b93-9d67-ff1f9017a716" />
+
 ![report](https://github.com/Kaszub09/abapToC/assets/34368953/9942d528-7b71-4db8-bcf1-82906ed1aa90)
 
 2. Create, release and import Transport of Copies with one click:
