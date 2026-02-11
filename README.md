@@ -33,4 +33,4 @@ ABAP Transport of Copies
 - v1.4 - add support for sub transport, minor enhancements
 - 11.09.2025 - add support for selecting different target system (thanks for idea [jrgkraus](https://github.com/jrgkraus)
 - 17.09.2025 - add support for transport groups
-
+- 11.02.2026 - read variant with current username on report initialization
