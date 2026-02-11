@@ -40,7 +40,12 @@ SELECTION-SCREEN END OF BLOCK b04.
 
 INITIALIZATION.
   DATA(report) = NEW zcl_zabap_toc_report( sy-repid ).
-
+  CALL FUNCTION 'RS_SUPPORT_SELECTIONS'
+    EXPORTING
+      report  = sy-repid
+      variant = CONV raldb_vari( sy-uname )
+    EXCEPTIONS
+      OTHERS  = 1.
   " -----------------------------------------------------------------------
 
 START-OF-SELECTION.
@@ -51,7 +56,6 @@ START-OF-SELECTION.
   report->gather_transports( tranports = s_trnum[] owners = s_owner[] descriptions = s_descr[]
                              include_released = p_reltr include_tocs = p_tocs include_subtransports = p_sub ).
   report->display( p_layout ).
-
   " -----------------------------------------------------------------------
 
 AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_layout.
