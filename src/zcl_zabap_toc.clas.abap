@@ -183,7 +183,7 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
 
     INSERT VALUE #( target_system = target_system ) INTO TABLE systems_cache REFERENCE INTO systems_ref.
 
-    SELECT CASE WHEN tarclient IS INITIAL THEN tarsystem
+    SELECT CASE WHEN tarclient = @space THEN tarsystem
                 ELSE concat( tarsystem, concat( '.', tarclient ) )
            END
       FROM tcetarg
