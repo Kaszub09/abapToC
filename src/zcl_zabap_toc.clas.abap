@@ -183,10 +183,13 @@ CLASS zcl_zabap_toc IMPLEMENTATION.
 
     INSERT VALUE #( target_system = target_system ) INTO TABLE systems_cache REFERENCE INTO systems_ref.
 
-    SELECT concat( tarsystem, concat( '.', tarclient ) ) FROM tcetarg
-    WHERE version IN ( SELECT MAX( version ) AS version FROM tcetarg WHERE targ_group = @target_system )
-        AND targ_group = @target_system
-    INTO TABLE @systems_ref->systems.
+    SELECT CASE WHEN tarclient = @space THEN tarsystem
+                ELSE concat( tarsystem, concat( '.', tarclient ) )
+           END
+      FROM tcetarg
+      WHERE version    IN ( SELECT MAX( version ) AS version FROM tcetarg WHERE targ_group = @target_system )
+        AND targ_group  = @target_system
+      INTO TABLE @systems_ref->systems.
 
     systems = systems_ref->systems.
   ENDMETHOD.

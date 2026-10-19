@@ -34,3 +34,4 @@ ABAP Transport of Copies
 - 11.09.2025 - add support for selecting different target system (thanks for idea [jrgkraus](https://github.com/jrgkraus)
 - 17.09.2025 - add support for transport groups
 - 11.02.2026 - read variant with current username on report initialization
+- 19.10.2026 - Fix incorrect system name without maintained client
